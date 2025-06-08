@@ -15,7 +15,7 @@
     - name: Configure interface settings
       asa_command:
         commands:
-          -config t
+          - config t
           - interface GigabitEthernet0/0
           - nameif inside
           - security-level 100
