@@ -1,0 +1,31 @@
+---
+- name: Lancer un backup FMC via SSH CLI
+  hosts: localhost
+  gather_facts: false
+
+  vars:
+    fmc_ip: "150.1.7.160"
+    fmc_ssh_user: "admin"
+    fmc_ssh_pass: "Pa//w0rd@"
+    backup_command: "/usr/bin/backup.pl --remote"
+    log_file: "/var/log/sf/backup.log"
+
+  tasks:
+
+    - name: Lancer le backup via SSH sur le FMC
+      ansible.builtin.shell: "{{ backup_command }}"
+      register: backup_output
+      delegate_to: "{{ fmc_ip }}"
+      vars:
+        ansible_user: "{{ fmc_ssh_user }}"
+        ansible_password: "{{ fmc_ssh_pass }}"
+        ansible_connection: ssh
+        ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
+
+    - name: Afficher la sortie du backup
+      debug:
+        var: backup_output.stdout_lines
+
+   
+   
+

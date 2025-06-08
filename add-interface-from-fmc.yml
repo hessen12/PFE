@@ -1,0 +1,72 @@
+- name: Ajouter une interface sur un FTD via FMC API REST
+  hosts: localhost
+  gather_facts: no
+  vars:
+    fmc_base_url: "https://{{ fmc_ip }}"
+    fmc_ip: "150.1.7.160"
+    username: "hessen"
+    password: "adminadmin"
+    domain_uuid: "e276abec-e0f2-11e3-8169-6d9ed49b625f"
+    device_id: "1d92ee3c-1a05-11f0-861a-cbb39a8b51ce"
+    security_zone_id: "newsecurityzone"
+    interface_name: "GigabitEthernet0/2"
+    interface_ip: "192.168.30.2"
+    interface_netmask: "255.255.255.0"
+    
+
+
+  tasks:
+    - name: Authentification FMC - récupérer token
+      uri:
+        url: "{{ fmc_base_url }}/api/fmc_platform/v1/auth/generatetoken"
+        method: POST
+        user: "{{ username }}"
+        password: "{{ password }}"
+        force_basic_auth: yes
+        validate_certs: no
+        return_content: yes
+        status_code: 204
+      register: login_response
+
+    - name: Extraire le token d'accès
+      set_fact:
+        fmc_token: "{{ login_response['x_auth_access_token'] | default(login_response['headers']['X-auth-access-token']) }}"
+
+     - name: Construire payload pour ajouter une interface
+      set_fact:
+        interface_payload:
+          name: "{{ interface_name }}"
+          ifcName: "{{ interface_name }}"
+          enabled: true
+          interfaceType: "PHYSICAL"
+          ipv4:
+            staticIp:
+              address: "{{ interface_ip }}"
+              netmask: "{{ interface_netmask }}"
+          securityZone:
+            name: "{{ securityzone_name }}"
+          vlanId: 0
+          mediaType: "GE"
+          duplex: "AUTO"
+          speed: "AUTO"
+          linkStatus: "UP"
+
+
+    - name: Ajouter / configurer l'interface sur le FTD
+      uri:
+        url: "{{ fmc_base_url }}/api/fmc_config/v1/domain/{{ domain_uuid }}/devices/devicerecords/{{ device_id }}/physicalinterfaces"
+        method: POST
+        headers:
+          X-auth-access-token: "{{ fmc_token }}"
+          Content-Type: "application/json"
+        body: "{{ interface_payload | to_json }}"
+        body_format: json
+        validate_certs: no
+        return_content: yes
+        status_code: [201, 202]
+      register: add_interface_response
+
+    - name: Debug la réponse d'interface
+      debug:
+        var: add_interface_response.json
+

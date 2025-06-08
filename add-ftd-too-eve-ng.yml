@@ -1,0 +1,82 @@
+---
+- name: Add a Cisco FTD node to an EVE-NG lab
+  hosts: localhost
+  gather_facts: no
+  vars:
+    eve_ng_ip: "10.112.62.51"
+    eve_ng_username: "admin"
+    eve_ng_password: "eve"
+    lab_path: "/pfe.unl"
+    cookie_file: "/tmp/cookie"
+  tasks:
+    - name: Authenticate to EVE-NG and get a session cookie
+      ansible.builtin.uri:
+        url: "http://{{ eve_ng_ip }}/api/auth/login"
+        method: POST
+        headers:
+          Accept: "application/json"
+        body: >
+          {
+            "username": "{{ eve_ng_username }}",
+            "password": "{{ eve_ng_password }}",
+            "html5": "-1"
+          }
+        body_format: json
+        validate_certs: no
+        return_content: yes
+      register: login_response
+
+    - name: Debug login response
+      ansible.builtin.debug:
+        var: login_response
+
+    - name: Set fact for cookies
+      ansible.builtin.set_fact:
+        eve_ng_cookies: "{{ login_response.cookies }}"
+      
+    - name: Debug cookies
+      ansible.builtin.debug:
+        var: eve_ng_cookies
+
+    - name: Add a Cisco FTD node to the lab
+      ansible.builtin.uri:
+        url: "http://{{ eve_ng_ip }}/api/labs{{ lab_path }}/nodes"
+        method: POST
+        headers:
+          Content-Type: "application/json"
+          cookie: "unetlab_session={{ eve_ng_cookies.unetlab_session }}"
+        body: >
+          {
+            "template": "ftd7",
+            "type": "qemu",
+            "count": "1",
+            "image": "ftd7-FTD-7.2.8-25",
+            "name": "FirePower",
+            "icon": "Firewall3.png",
+            "uuid": "",
+            "cpulimit": "undefined",
+            "cpu": "4",
+            "ram": "8192",
+            "ethernet": "5",
+            "firstmac": "",
+            "qemu_version": "",
+            "qemu_arch": "",
+            "qemu_nic": "",
+            "qemu_options": "-machine type: pc,accel=kvm -serial none -nographic -no-user-config -nodefaults -display none -vga std -rtc base=utc -cpu host",
+            "ro_qemu_options": "-machine type=pc,accel=kvm -serial none -nographic -no-user-config -nodefaults -display none -vga std -rtc base=utc -cpu host",
+            "config": "0",
+            "delay": "0",
+            "console": "vnc",
+            "left": "0",
+            "top": "0",
+            "postfix": 0
+          }
+        body_format: json
+        validate_certs: no
+        return_content: yes
+        status_code: 201
+      register: add_node_response
+
+    - name: Debug node addition response
+      ansible.builtin.debug:
+        var: add_node_response

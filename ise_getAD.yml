@@ -1,0 +1,31 @@
+- name: Get specific Active Directory source from Cisco ISE
+  hosts: localhost
+  gather_facts: no
+  vars:
+    ise_host: "150.1.7.130"
+    ise_port: 9060
+    ise_user: "ise"
+    ise_pass: "Pa//w0rd"
+    ad_source_name: "DC"
+    headers:
+      Content-Type: "application/json"
+      Accept: "application/json"
+
+  tasks:
+    - name: Query Active Directory source by name
+      uri:
+        url: "https://{{ ise_host }}:{{ ise_port }}/ers/config/activedirectory/name/{{ ad_source_name }}"
+        method: GET
+        user: "{{ ise_user }}"
+        password: "{{ ise_pass }}"
+        force_basic_auth: yes
+        headers: "{{ headers }}"
+        validate_certs: no
+        return_content: yes
+        status_code: 200
+      register: ad_response
+
+    - name: Show AD source response
+      debug:
+        var: ad_response.json
+

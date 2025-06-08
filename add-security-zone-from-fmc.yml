@@ -1,0 +1,67 @@
+---
+- name: FMC | Ajouter une Security Zone
+  hosts: localhost
+  gather_facts: no
+  vars:
+    fmc_base_url: "https://150.1.7.160"
+    fmc_username: "hessen"
+    fmc_password: "adminadmin"
+    domain_uuid: "e276abec-e0f2-11e3-8169-6d9ed49b625f"
+
+  tasks:
+
+    - name: Obtenir un token FMC
+      uri:
+        url: "{{ fmc_base_url }}/api/fmc_platform/v1/auth/generatetoken"
+        method: POST
+        user: "{{ fmc_username }}"
+        password: "{{ fmc_password }}"
+        force_basic_auth: yes
+        validate_certs: no
+        return_content: yes
+        status_code: [201, 204]
+        timeout: 60
+      register: login_response
+
+    - name: Extraire le token d'accès
+      set_fact:
+        fmc_token: "{{ login_response['x_auth_access_token'] | default(login_response['headers']['X-auth-access-token']) }}"
+
+    - name: Demander le nom de la Security Zone à créer
+      pause:
+        prompt: "Entrez le nom de la Security Zone à ajouter (Ctrl+C pour annuler)"
+      register: seczone_name_input
+
+    - name: Demander le mode d'interface (ROUTED ou TRANSPARENT)
+      pause:
+        prompt: "Entrez le mode d'interface (ROUTED ou TRANSPARENT, défaut = ROUTED)"
+      register: seczone_mode_input
+
+    - name: Définir le mode d'interface final
+      set_fact:
+        seczone_mode: "{{ (seczone_mode_input.user_input | upper) if seczone_mode_input.user_input else 'ROUTED' }}"
+
+    - name: Créer la Security Zone FMC
+      uri:
+        url: "{{ fmc_base_url }}/api/fmc_config/v1/domain/{{ domain_uuid }}/object/securityzones"
+        method: POST
+        headers:
+          X-auth-access-token: "{{ fmc_token }}"
+          Content-Type: "application/json"
+        validate_certs: no
+        body_format: json
+        body:
+          name: "{{ seczone_name_input.user_input }}"
+          interfaceMode: "{{ seczone_mode }}"
+          type: SecurityZone
+        status_code: [201, 202]
+        return_content: yes
+      register: seczone_create_response
+
+    - name: Afficher le résultat de la création
+      debug:
+        msg: |
+          Résultat : {{ seczone_create_response.status }}
+          Security Zone créée : {{ seczone_create_response.json.name }}
+          Mode : {{ seczone_create_response.json.interfaceMode }}
+

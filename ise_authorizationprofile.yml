@@ -1,0 +1,46 @@
+---
+- name: Créer un profil d'autorisation via l'API REST
+  hosts: ise01
+  gather_facts: false
+  vars:
+    ise_host: "150.1.7.130"
+    ise_port: "9060"
+    auth_string: "Basic aGVzc2VuOmhlc3Nlbg=="
+    authz_profile_name: "addprofile-withansible"
+
+  tasks:
+    - name: Créer un profil d'autorisation
+      uri:
+        url: "https://{{ ise_host }}:{{ ise_port }}/ers/config/authorizationprofile"
+        method: POST
+        headers:
+          Content-Type: "application/json"
+          Accept: "application/json"
+          Authorization: "{{ auth_string }}"
+        validate_certs: false
+        status_code: [200, 201]
+        body_format: json
+        body: >
+          {
+            "AuthorizationProfile": {
+              "name": "{{ authz_profile_name }}",
+              "description": "Profil avec VLAN 207 et DACL TAC",
+              "accessType": "ACCESS_ACCEPT",
+              "authzProfileType": "SWITCH",
+              "vlan": {
+                "nameID": "207",
+                "tagID": 1
+              },
+              "trackMovement": false,
+              "serviceTemplate": false,
+              "easywiredSessionCandidate": false,
+              "autoSmartPort": false,
+              "daclName": "TAC-DACL"
+            }
+          }
+      register: result
+
+    - name: Afficher la réponse de l'API
+      debug:
+        var: result
+

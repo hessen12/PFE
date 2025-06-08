@@ -1,0 +1,52 @@
+---
+- name: Configure Cisco Router R7
+  hosts: cisco
+  gather_facts: no
+  connection: network_cli
+
+  tasks:
+
+    - name: Set hostname
+      ios_command:
+        commands:
+          - conf t
+          - hostname R7
+
+    - name: Configure Loopback0 interface
+      ios_command:
+        commands:
+          - conf t
+          - interface Loopback0
+          - ip address 192.168.1.1 255.255.255.255
+          - no shutdown
+
+    - name: Configure Ethernet0/0 interface
+      ios_command:
+        commands:
+          - conf t
+          - interface Ethernet0/0
+          - ip address 172.29.4.254 255.255.255.0
+          - no shutdown
+
+    - name: Configure EIGRP
+      ios_command:
+        commands:
+          - conf t
+          - router eigrp 1
+          - network 172.29.4.0 0.0.0.255
+          - network 192.168.1.0 0.0.0.255
+
+    - name: Configure HTTP server settings
+      ios_command:
+        commands:
+          - conf t
+          - ip http server
+          - ip http port 8080
+          - ip http authentication local
+          - ip http secure-server
+
+    - name: Save configuration
+      ios_command:
+        commands:
+          - write memory
+

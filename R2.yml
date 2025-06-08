@@ -1,0 +1,33 @@
+---
+- name: Configure R2 Router with IP Addresses
+  hosts: cisco
+  gather_facts: no
+  connection: network_cli
+
+  tasks:
+  
+    - name: Set hostname to R2
+      ios_command:
+        commands:
+          - conf t
+          - hostname R2
+
+    - name: Configure Ethernet0/0 IP Address
+      ios_config:
+        lines:
+          - interface Ethernet0/0
+          - ip address 5.2.23.2 255.255.255.0
+          - no shutdown
+
+    - name: Configure Ethernet0/1 IP Address
+      ios_config:
+        lines:
+          - interface Ethernet0/1
+          - ip address 5.2.24.2 255.255.255.0
+          - no shutdown
+
+    - name: Save Configuration
+      ios_command:
+        commands:
+          - write memory
+

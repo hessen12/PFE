@@ -1,0 +1,11 @@
+---
+- name: RESTORE ROUTER CONFIGURATION
+  hosts: cisco
+  connection: network_cli
+  gather_facts: no
+
+  tasks:
+    - name: Push saved configuration
+      ios_config:
+        src: backup/router_config.2025-05-02@15:38:30
+

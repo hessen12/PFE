@@ -1,0 +1,22 @@
+- name: Enable DNS and set server
+  hosts: asav
+  gather_facts: no
+  connection: network_cli
+
+  vars:
+    ansible_network_os: cisco.asa.asa
+    ansible_user: admin
+    ansible_password: admin
+    ansible_become: yes
+    ansible_become_method: enable
+    ansible_become_password: admin
+
+  tasks:
+    - name: Enable DNS and set server
+      asa_command:
+        commands:
+          - dns domain-lookup mgmt
+          - dns server-group DefaultDNS
+          - name-server 150.1.7.13 mgmt
+          - domain-name pfe.lab
+

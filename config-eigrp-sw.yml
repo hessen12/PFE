@@ -1,0 +1,13 @@
+- name: Configure EIGRP on SW7v
+  hosts: switch
+  gather_facts: no
+  connection: network_cli
+  tasks:
+    - name: Configure EIGRP routing
+      ios_command:
+        commands:
+          - conf t
+          - router eigrp 4
+          - network 5.2.38.0 0.0.0.255
+          - network 192.168.100.0
+          - end

@@ -1,0 +1,45 @@
+- name: Get Devices from FMC
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    fmc_base_url: "https://150.1.7.160"
+    fmc_username: "hessen"
+    fmc_password: "adminadmin"
+    domain_uuid: "e276abec-e0f2-11e3-8169-6d9ed49b625f"
+
+  tasks:
+    - name: Get FMC Token
+      uri:
+        url: "{{ fmc_base_url }}/api/fmc_platform/v1/auth/generatetoken"
+        method: POST
+        user: "{{ fmc_username }}"
+        password: "{{ fmc_password }}"
+        force_basic_auth: yes
+        validate_certs: no
+        return_content: yes
+        status_code: [201, 204]
+        timeout: 60
+      register: login_response
+
+    - name: Display Generated Token
+      debug:
+        var: login_response
+
+    - name: Get Devices
+      uri:
+        url: "{{ fmc_base_url }}/api/fmc_config/v1/domain/{{ domain_uuid }}/devices/devicerecords"
+        method: GET
+        headers:
+          X-auth-access-token: "{{ login_response.x_auth_access_token }}"
+          Content-Type: "application/json"
+        validate_certs: no
+        return_content: yes
+        status_code: 200
+      register: devices_response
+
+    - name: Show Devices
+      debug:
+        var: devices_response.json
+

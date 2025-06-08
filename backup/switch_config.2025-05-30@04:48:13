@@ -1,0 +1,220 @@
+Building configuration...
+
+Current configuration : 4430 bytes
+!
+! Last configuration change at 08:47:40 UTC Fri May 30 2025 by admin
+!
+version 15.2
+service timestamps debug datetime msec
+service timestamps log datetime msec
+no service password-encryption
+service compress-config
+!
+hostname SW7v
+!
+boot-start-marker
+boot-end-marker
+!
+!
+enable password admin
+!
+username admin privilege 15 secret 5 $1$YhOZ$TVESqHQ.hXG1sYxuEZqim0
+aaa new-model
+!
+!
+aaa group server radius ise-group
+ server name ISE
+!
+aaa authentication login default local
+aaa authentication dot1x default group ise-group
+aaa authorization network default group ise-group 
+aaa authorization auth-proxy default group ise-group 
+aaa accounting update periodic 5
+aaa accounting dot1x default start-stop group ise-group
+!
+!
+!
+!
+aaa server radius policy-device
+!
+aaa server radius dynamic-author
+ client 150.1.7.130 server-key aaakey
+ client 161.1.7.222 server-key cisco
+ server-key aaakey
+!
+aaa session-id common
+!
+!
+!
+!
+!
+!
+ip dhcp excluded-address 172.29.35.1 172.29.35.9
+ip dhcp excluded-address 172.31.207.1
+ip dhcp excluded-address 172.31.207.1 172.31.207.9
+ip dhcp excluded-address 172.29.207.1 172.29.207.9
+ip dhcp excluded-address 5.2.38.0 5.2.38.9
+!
+ip dhcp pool Contractor
+ network 172.29.35.0 255.255.255.0
+ default-router 172.29.35.1 
+ dns-server 5.2.33.10 150.1.7.10 
+!
+ip dhcp pool TAC
+ network 172.29.207.0 255.255.255.0
+ default-router 172.29.207.1 
+ dns-server 150.1.7.10 
+!
+ip dhcp pool Branch
+ network 5.2.38.0 255.255.255.0
+ default-router 5.2.38.1 
+ dns-server 150.1.7.10 
+!
+!
+ip dhcp snooping vlan 1-207
+no ip dhcp snooping information option
+ip dhcp snooping
+ip domain-name ok.com
+ip cef
+no ipv6 cef
+!
+!
+dot1x system-auth-control
+!
+spanning-tree mode pvst
+spanning-tree extend system-id
+!
+!
+! 
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+interface Ethernet0/0
+ switchport access vlan 207
+ switchport trunk encapsulation dot1q
+ switchport mode access
+ authentication event fail action next-method
+ authentication event server dead action reinitialize vlan 207
+ authentication host-mode multi-auth
+ authentication order dot1x mab
+ authentication priority dot1x mab
+ authentication port-control auto
+ authentication periodic
+ authentication violation restrict
+ mab
+ dot1x pae authenticator
+ spanning-tree portfast edge trunk
+ spanning-tree bpduguard enable
+!
+interface Ethernet0/1
+ switchport access vlan 207
+ switchport mode access
+ authentication event fail action next-method
+ authentication event server dead action reinitialize vlan 207
+ authentication host-mode multi-auth
+ authentication order dot1x mab
+ authentication priority dot1x mab
+ authentication port-control auto
+ authentication periodic
+ authentication violation restrict
+ mab
+ dot1x pae authenticator
+ spanning-tree portfast edge
+!
+interface Ethernet0/2
+ switchport access vlan 207
+ switchport mode access
+!
+interface Ethernet0/3
+ no switchport
+ ip address 150.1.7.154 255.255.255.0
+ duplex full
+!
+interface Vlan1
+ ip address 151.1.7.31 255.255.255.0
+ shutdown
+!
+interface Vlan207
+ ip address 172.29.207.1 255.255.255.0
+ shutdown
+!
+interface Vlan305
+ ip address 172.29.35.1 255.255.255.0
+ shutdown
+!
+interface Vlan308
+ ip address 5.2.38.1 255.255.255.0
+ shutdown
+!
+!
+router eigrp 3
+ network 5.2.36.0 0.0.0.255
+ network 172.29.35.0 0.0.0.255
+!
+!
+router eigrp 4
+ network 5.2.38.0 0.0.0.255
+ network 192.168.100.0
+!
+ip forward-protocol nd
+!
+ip http server
+!
+ip route 0.0.0.0 0.0.0.0 161.1.7.254
+ip route 0.0.0.0 0.0.0.0 150.1.7.251
+ip ssh authentication-retries 2
+ip ssh version 2
+ip ssh server algorithm encryption aes128-ctr aes192-ctr aes256-ctr
+ip ssh client algorithm encryption aes128-ctr aes192-ctr aes256-ctr
+!
+ip access-list extended ACL-DEFAULT
+ permit tcp any any eq 22
+ permit udp any eq bootpc any eq bootps
+ permit udp any any eq domain
+ permit icmp any any
+ deny   ip any any log
+!
+ip radius source-interface Vlan1 
+logging source-interface Vlan1
+logging host 161.1.7.222 transport udp port 20514
+logging host 161.1.7.222
+logging host 150.1.7.130 transport udp port 20514
+logging host 150.1.7.130
+!
+!
+!
+radius-server attribute 6 on-for-login-auth
+radius-server attribute 6 support-multiple
+radius-server attribute 8 include-in-access-req
+radius-server attribute 25 access-request include
+!
+radius server ISE
+ address ipv4 150.1.7.130 auth-port 1812 acct-port 1813
+ key aaakey
+!
+!
+control-plane
+!
+!
+line con 0
+ password cisco
+ logging synchronous
+line aux 0
+line vty 0 4
+ privilege level 15
+ password cisco
+ transport input ssh
+!
+!
+netconf-yang
+!
+end

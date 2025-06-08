@@ -1,0 +1,43 @@
+---
+- name: Configure Cisco Router R10
+  hosts: cisco
+  gather_facts: no
+  connection: network_cli
+
+  tasks:
+
+    - name: Set hostname
+      ios_command:
+        commands:
+          - conf t
+          - hostname R10
+
+    - name: Configure Ethernet0/0 interface
+      ios_command:
+        commands:
+          - conf t
+          - interface Ethernet0/0
+          - ip address 5.2.36.254 255.255.255.0
+          - no shutdown
+
+    - name: Configure Ethernet0/1 interface
+      ios_command:
+        commands:
+          - conf t
+          - interface Ethernet0/1
+          - ip address 5.2.34.254 255.255.255.0
+          - no shutdown
+
+    - name: Configure EIGRP 3
+      ios_command:
+        commands:
+          - conf t
+          - router eigrp 3
+          - network 5.2.34.0 0.0.0.255
+          - network 5.2.36.0 0.0.0.255
+
+    - name: Save configuration
+      ios_command:
+        commands:
+          - write memory
+

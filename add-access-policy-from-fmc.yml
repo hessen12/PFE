@@ -1,0 +1,87 @@
+- name: Ajouter une nouvelle policy et une règle simple dans FMC
+  hosts: localhost
+  gather_facts: false
+
+  vars:
+    fmc_base_url: "https://150.1.7.160"
+    fmc_username: "hessen"
+    fmc_password: "adminadmin"
+    domain_uuid: "e276abec-e0f2-11e3-8169-6d9ed49b625f"
+    device_id: "1d92ee3c-1a05-11f0-861a-cbb39a8b51ce"
+    policy_name: "POLFTD0"
+    new_rule_name: "NouvelleRegleSimple"
+
+  tasks:
+    - name: Authentification sur FMC - obtenir token
+      uri:
+        url: "{{ fmc_base_url }}/api/fmc_platform/v1/auth/generatetoken"
+        method: POST
+        user: "{{ fmc_username }}"
+        password: "{{ fmc_password }}"
+        force_basic_auth: yes
+        validate_certs: false
+        return_content: yes
+        status_code: [200, 201, 204]
+      register: login_response
+
+    - name: Extraire le token d'accès
+      set_fact:
+        fmc_token: "{{ login_response['x_auth_access_token'] | default(login_response['headers']['X-auth-access-token']) }}"
+
+    - name: Créer une nouvelle policy
+      uri:
+        url: "{{ fmc_base_url }}/api/fmc_config/v1/domain/{{ domain_uuid }}/policy/accesspolicies"
+        method: POST
+        headers:
+          X-auth-access-token: "{{ fmc_token }}"
+          Content-Type: "application/json"
+        body_format: json
+        body:
+          name: "{{ policy_name }}"
+          type: "AccessPolicy"
+          defaultAction:
+            action: "BLOCK"   # Or ALLOW based on your default behavior
+        validate_certs: false
+        status_code: [200, 201, 202]
+      register: new_policy_response
+
+    - name: Afficher la réponse de création de policy
+      debug:
+        var: new_policy_response.json
+
+    - name: Préparer la nouvelle règle à ajouter
+      set_fact:
+        new_rule:
+          name: "{{ new_rule_name }}"
+          action: "ALLOW"
+          enabled: true
+          type: "AccessRule"
+          sendEventsToFMC: false
+          logFiles: false
+          sourceZones:
+            objects: []
+          destinationZones:
+            objects: []
+          sourceNetworks:
+            objects: []
+          destinationNetworks:
+            objects: []
+
+    - name: Ajouter la nouvelle règle via POST
+      uri:
+        url: "{{ fmc_base_url }}/api/fmc_config/v1/domain/{{ domain_uuid }}/policy/accesspolicies/{{ new_policy_response.json.id }}/accessrules"
+        method: POST
+        headers:
+          X-auth-access-token: "{{ fmc_token }}"
+          Content-Type: "application/json"
+        body_format: json
+        body: "{{ new_rule }}"
+        validate_certs: false
+        status_code: [200, 201, 202]
+        timeout: 60
+      register: add_rule_response
+
+    - name: Afficher la réponse de création de règle
+      debug:
+        var: add_rule_response.json
+

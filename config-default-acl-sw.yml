@@ -1,0 +1,15 @@
+- name: Configure ACL-DEFAULT on SW7v
+  hosts: switch
+  gather_facts: no
+  connection: network_cli
+  tasks:
+    - name: Configure ACL-DEFAULT
+      ios_command:
+        commands:
+          - conf t
+          - ip access-list extended ACL-DEFAULT
+          - permit udp any eq bootpc 
+          - permit udp any any eq domain
+          - permit icmp any any
+          - deny ip any any log
+          - end

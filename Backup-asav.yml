@@ -1,0 +1,26 @@
+---
+- name: Configure Cisco ASA2 complete settings and backup running config
+  hosts: asav
+  gather_facts: no
+  connection: network_cli
+
+  vars:
+    ansible_network_os: cisco.asa.asa
+    ansible_user: admin
+    ansible_password: admin
+    ansible_become: yes
+    ansible_become_method: enable
+    ansible_become_password: admin
+
+  tasks:
+
+    - name: Get running configuration
+      cisco.asa.asa_command:
+        commands:
+          - show running-config
+      register: running_config
+
+    - name: Display running configuration
+      debug:
+        var: running_config.stdout_lines
+

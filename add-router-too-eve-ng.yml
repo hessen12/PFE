@@ -1,0 +1,77 @@
+---
+- name: Ajouter un nœud avec l'API HTTP dans EVE-NG
+  hosts: localhost
+  gather_facts: no
+  vars:
+    eve_ng_ip: "10.112.62.51"
+    eve_ng_username: "admin"
+    eve_ng_password: "eve"
+    lab_path: "/pfe.unl"
+  tasks:
+    - name: Authenticate to EVE-NG and get a session cookie
+      ansible.builtin.uri:
+        url: "http://{{ eve_ng_ip }}/api/auth/login"
+        method: POST
+        headers:
+          Accept: "application/json"
+        body: >
+          {
+            "username": "{{ eve_ng_username }}",
+            "password": "{{ eve_ng_password }}",
+            "html5": "-1"
+          }
+        body_format: json
+        validate_certs: no
+        return_content: yes
+      register: login_response
+
+    - name: Debug login response
+      ansible.builtin.debug:
+        var: login_response
+
+    - name: Set fact for cookies
+      ansible.builtin.set_fact:
+        eve_ng_cookies: "{{ login_response.cookies }}"
+      
+    - name: Debug cookies
+      ansible.builtin.debug:
+        var: eve_ng_cookies
+
+    - name: Créer le corps de la requête
+      set_fact:
+        node_data: >
+          {
+            "template": "iol",
+            "type": "iol",
+            "count": "1",
+            "image": "L3-ADVENTERPRISEK9-M-15.2-M5.3.bin",
+            "name": "R",
+            "icon": "Router.png",
+            "nvram": "1024",
+            "ram": "1024",
+            "ethernet": "1",
+            "serial": "0",
+            "config": "0",
+            "delay": "0",
+            "left": "0",
+            "top": "0",
+            "postfix": 0
+          }
+
+    - name: Ajouter le nœud avec l'API HTTP dans EVE-NG
+      ansible.builtin.uri:
+        url: "http://{{ eve_ng_ip }}/api/labs{{ lab_path }}/nodes"
+        method: POST
+        headers:
+          Content-Type: "application/json"
+          cookie: "unetlab_session={{ eve_ng_cookies.unetlab_session }}"
+        body: "{{ node_data }}"
+        body_format: json
+        validate_certs: no
+        return_content: yes
+        status_code: 201
+      register: add_node_response
+
+    - name: Debug node addition response
+      ansible.builtin.debug:
+        var: add_node_response

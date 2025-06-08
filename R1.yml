@@ -1,0 +1,41 @@
+---
+- name: Configure Cisco Router R1
+  hosts: cisco
+  gather_facts: no
+  connection: network_cli
+
+  tasks:
+
+    - name: Set hostname
+      ios_command:
+        commands:
+          - conf t
+          - hostname R1
+
+    - name: Configure interface Ethernet0/0
+      ios_command:
+        commands:
+          - conf t
+          - interface Ethernet0/0
+          - ip address 5.2.11.254 255.255.255.0
+          - no shutdown
+
+    - name: Configure interface Ethernet0/1
+      ios_command:
+        commands:
+          - conf t
+          - interface Ethernet0/1
+          - ip address 172.29.10.254 255.255.255.0
+          - no shutdown
+
+    - name: Configure default route
+      ios_command:
+        commands:
+          - conf t
+          - ip route 0.0.0.0 0.0.0.0 5.2.11.1
+
+    - name: Save configuration
+      ios_command:
+        commands:
+          - write memory
+

@@ -1,0 +1,63 @@
+- name: Configurer une route statique sur FMC
+  hosts: localhost
+  gather_facts: no
+  vars:
+    fmc_base_url: "https://150.1.7.160"
+    fmc_username: "hessen"
+    fmc_password: "adminadmin"
+    domain_uuid: "e276abec-e0f2-11e3-8169-6d9ed49b625f"
+    device_id: "1d92ee3c-1a05-11f0-861a-cbb39a8b51ce"
+
+    # Variables for static route:
+    static_route_name: "RouteStaticTest"
+    gateway_ip: "10.10.10.1"
+    interface_name: "GigabitEthernet0/0"
+    network_value: "192.168.100.0"
+    network_mask: 24
+
+  tasks:
+    - name: Authentification sur FMC - obtenir token
+      uri:
+        url: "{{ fmc_base_url }}/api/fmc_platform/v1/auth/generatetoken"
+        method: POST
+        user: "{{ fmc_username }}"
+        password: "{{ fmc_password }}"
+        force_basic_auth: yes
+        validate_certs: false
+        return_content: yes
+        status_code: [200, 201, 204]
+      register: login_response
+
+    - name: Extraire le token d'accès
+      set_fact:
+        fmc_token: "{{ login_response['x_auth_access_token'] | default(login_response['headers']['X-auth-access-token']) }}"
+
+    - name: Créer une route statique sur FMC
+      uri:
+        url: "{{ fmc_base_url }}/api/fmc_config/v1/domain/{{ domain_uuid }}/devices/devicerecords/{{ device_id }}/routing/staticroutes"
+        method: POST
+        headers:
+          X-auth-access-token: "{{ fmc_token }}"
+          Content-Type: "application/json"
+        body_format: json
+        body:
+          name: "{{ static_route_name }}"
+          enabled: true
+          gateway:
+            type: "Host"
+            ip: "{{ gateway_ip }}"
+          interface:
+            name: "{{ interface_name }}"
+          network:
+            type: "Network"
+            value: "{{ network_value }}"
+            mask: "{{ network_mask }}"
+          metric: 1
+        validate_certs: false
+        status_code: [200, 201, 202]
+      register: static_route_response
+
+    - name: Afficher la réponse de la création de la route
+      debug:
+        var: static_route_response.json
+

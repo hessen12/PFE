@@ -1,0 +1,56 @@
+---
+- name: Supprimer un nœud en EVE-NG
+  hosts: localhost
+  gather_facts: no
+  vars:
+    eve_ng_ip: "10.112.62.51"
+    eve_ng_username: "admin"
+    eve_ng_password: "eve"
+    lab_path: "/pfe.unl"
+    node_id: 34  
+
+  tasks:
+    - name: Authenticate to EVE-NG and get a session cookie
+      ansible.builtin.uri:
+        url: "http://{{ eve_ng_ip }}/api/auth/login"
+        method: POST
+        headers:
+          Accept: "application/json"
+        body: >
+          {
+            "username": "{{ eve_ng_username }}",
+            "password": "{{ eve_ng_password }}",
+            "html5": "-1"
+          }
+        body_format: json
+        validate_certs: no
+        return_content: yes
+      register: login_response
+
+    - name: Set fact for cookies
+      ansible.builtin.set_fact:
+        eve_ng_cookies: "{{ login_response.cookies }}"
+
+    - name: Supprimer le nœud avec l'API HTTP dans EVE-NG
+      ansible.builtin.uri:
+        url: "http://{{ eve_ng_ip }}/api/labs{{ lab_path }}/nodes/{{ node_id }}"
+        method: DELETE
+        headers:
+          Accept: "application/json, text/javascript, */*; q=0.01"
+          Accept-Encoding: "gzip, deflate"
+          Accept-Language: "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7"
+          Connection: "keep-alive"
+          Cookie: "unetlab_session={{ eve_ng_cookies.unetlab_session }}; privacy=true"
+          Host: "{{ eve_ng_ip }}"
+          Origin: "http://{{ eve_ng_ip }}"
+          Referer: "http://{{ eve_ng_ip }}/legacy/"
+          User-Agent: "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36"
+          X-Requested-With: "XMLHttpRequest"
+        validate_certs: no
+        return_content: yes
+        status_code: [200, 204]  
+      register: delete_node_response
+
+    - name: Afficher la réponse de la suppression
+      debug:
+        var: delete_node_response

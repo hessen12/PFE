@@ -1,0 +1,42 @@
+---
+- name: Configure Cisco Router R15
+  hosts: all
+  gather_facts: no
+  connection: network_cli
+
+  tasks:
+    - name: Configure Ethernet0/0
+      ios_command:
+        commands:
+          - conf t
+          - interface Ethernet0/0
+          - ip address 172.29.15.15 255.255.255.0
+          - no shutdown
+
+    - name: Configure Ethernet0/1
+      ios_command:
+        commands:
+          - conf t
+          - interface Ethernet0/1
+          - ip address 172.29.16.15 255.255.255.0
+          - no shutdown
+
+    - name: Configure OSPF
+      ios_command:
+        commands:
+          - conf t
+          - router ospf 1
+          - network 172.29.15.0 0.0.0.255 area 0
+          - network 172.29.16.0 0.0.0.255 area 0
+
+    - name: Configure Static Default Route
+      ios_command:
+        commands:
+          - conf t
+          - ip route 0.0.0.0 0.0.0.0 172.29.16.1
+
+    - name: Save Configuration
+      ios_command:
+        commands:
+          - write memory
+

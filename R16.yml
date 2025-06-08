@@ -1,0 +1,79 @@
+---
+- name: Configure Cisco Router R16 with IPSec Tunnel and EIGRP
+  hosts: cisco
+  gather_facts: no
+  connection: network_cli
+
+  tasks:
+
+    - name: Set hostname
+      ios_command:
+        commands:
+          - conf t
+          - hostname R16
+
+    - name: Configure ISAKMP Policy
+      ios_config:
+        lines:
+          - crypto isakmp policy 10
+          - encr aes
+          - hash sha256
+          - authentication pre-share
+          - group 2
+          - crypto isakmp key cisco123 address 172.16.100.5
+
+    - name: Configure IPSec Transform Set
+      ios_config:
+        lines:
+          - crypto ipsec transform-set GRE-SET esp-aes esp-sha-hmac
+          - mode transport
+
+    - name: Configure Crypto Map
+      ios_config:
+        lines:
+          - crypto map GRE-MAP 10 ipsec-isakmp
+          - set peer 172.16.100.5
+          - set transform-set GRE-SET
+          - match address 100
+
+    - name: Configure Tunnel Interface
+      ios_config:
+        lines:
+          - interface Tunnel0
+          - ip address 10.10.100.1 255.255.255.252
+          - tunnel source Ethernet0/0
+          - tunnel destination 172.16.100.5
+          - no shutdown
+
+    - name: Configure Ethernet0/0 with Crypto Map
+      ios_config:
+        lines:
+          - interface Ethernet0/0
+          - ip address 172.16.100.16 255.255.255.0
+          - crypto map GRE-MAP
+          - no shutdown
+
+    - name: Configure Ethernet0/1
+      ios_config:
+        lines:
+          - interface Ethernet0/1
+          - ip address 192.168.100.16 255.255.255.0
+          - no shutdown
+
+    - name: Configure EIGRP Routing
+      ios_config:
+        lines:
+          - router eigrp 4
+          - network 10.10.100.0 0.0.0.255
+          - network 192.168.100.0
+
+    - name: Configure GRE Access-List
+      ios_config:
+        lines:
+          - access-list 100 permit gre host 172.16.100.16 host 172.16.100.5
+
+    - name: Save Configuration
+      ios_command:
+        commands:
+          - write memory
+

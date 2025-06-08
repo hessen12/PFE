@@ -1,0 +1,58 @@
+---
+- name: Ajouter un nœud Cisco ASA dans EVE-NG
+  hosts: localhost
+  gather_facts: no
+  vars:
+    eve_ng_ip: "10.112.62.51"
+    eve_ng_username: "admin"
+    eve_ng_password: "eve"
+    lab_path: "/pfe.unl"
+
+  tasks:
+    - name: Authentifier auprès de EVE-NG
+      uri:
+        url: "http://{{ eve_ng_ip }}/api/auth/login"
+        method: POST
+        headers:
+          Accept: "application/json"
+        body_format: json
+        body:
+          username: "{{ eve_ng_username }}"
+          password: "{{ eve_ng_password }}"
+        return_content: yes
+        validate_certs: no
+      register: login_response
+
+    - name: Extraire la session cookie
+      set_fact:
+        eve_ng_cookie: "unetlab_session={{ login_response.cookies.unetlab_session }}"
+
+    - name: Créer un nœud Cisco ASA
+      uri:
+        url: "http://{{ eve_ng_ip }}/api/labs{{ lab_path }}/nodes"
+        method: POST
+        headers:
+          Content-Type: "application/json"
+          Cookie: "{{ eve_ng_cookie }}"
+        body_format: json
+        body:
+          template: "asav"
+          type: "qemu"
+          name: "ASA-1"
+          
+          image: "asav-9151-00"  # 🔁 Remplace par ton image ASA exacte
+          ram: 1024
+          cpu: 1
+          ethernet: 6
+          console: "telnet"
+          icon: "ASA.png"
+          left: 300
+          top: 300
+        status_code: 201
+        validate_certs: no
+      register: node_creation
+
+    - name: Afficher la réponse de création
+      debug:
+        var: node_creation
+

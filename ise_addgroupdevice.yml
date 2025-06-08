@@ -1,0 +1,39 @@
+---
+- name: Create Network Device Group in Cisco ISE ERS
+  hosts: ise01
+  gather_facts: no
+  vars:
+    ise_host: "150.1.7.130"
+    ise_user: "ise"
+    ise_password: "Pa//w0rd"
+    network_device_group_name: "Device Type#All Device Types#router"
+    network_device_group_othername: "Device Type"
+  tasks:
+    - name: Create Network Device Group under Device Type
+      uri:
+        url: "https://{{ ise_host }}:9060/ers/config/networkdevicegroup"
+        method: POST
+        user: "{{ ise_user }}"
+        password: "{{ ise_password }}"
+        force_basic_auth: yes
+        validate_certs: no           
+        headers:
+          Content-Type: "application/json"
+          Accept: "application/json"
+        body: |
+          {
+            "NetworkDeviceGroup": {
+              "name": "{{ network_device_group_name }}",
+              "othername": "{{ network_device_group_othername }}"
+            }
+          }
+        body_format: json
+        status_code:
+          - 201
+          - 202
+      register: result
+
+    - name: Show result
+      debug:
+        var: result.json
+

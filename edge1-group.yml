@@ -1,0 +1,41 @@
+---
+- name: "Configure FortiGate user groups sales and sales-ldap"
+  hosts: fortigates
+  connection: httpapi
+  gather_facts: no
+  collections:
+    - fortinet.fortios
+
+  vars:
+    ansible_httpapi_use_ssl: no
+    ansible_httpapi_validate_certs: no
+    ansible_httpapi_port: 80
+    vdom: "root"
+    fortigate_token: "99kjN6p6H3N4xdHd51xtQy9p7g4wGh"
+
+  tasks:
+    - name: "Create 'sales' user group"
+      fortios_user_group:
+        vdom: "{{ vdom }}"
+        access_token: "{{ fortigate_token }}"
+        state: present
+        user_group:
+          name: "sales"
+          member:
+            - name: "admin"
+            - name: "hessen"
+
+    - name: "Create 'sales-ldap' user group with LDAP match"
+      fortios_user_group:
+        vdom: "{{ vdom }}"
+        access_token: "{{ fortigate_token }}"
+        state: present
+        user_group:
+          name: "sales-ldap"
+          member:
+            - name: "sales-LDAP"
+          match:
+            - id: 1
+              server_name: "sales-LDAP"
+              group_name: "CN=ssl-vpn-sales,OU=pfe,DC=pfe,DC=lab"
+

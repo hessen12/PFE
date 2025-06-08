@@ -1,0 +1,50 @@
+- name: Configure interfaces and VLANs on SW7v
+  hosts: switch
+  gather_facts: no
+  connection: network_cli
+  tasks:
+    - name: Configure Ethernet0/0
+      ios_config:
+        lines:
+          - interface Ethernet0/0
+          - switchport trunk encapsulation dot1q
+          - switchport mode trunk
+          - spanning-tree portfast edge trunk
+
+    - name: Configure Ethernet0/1 (dot1x + mab)
+      ios_config:
+        lines:
+          - interface Ethernet0/1
+          - switchport access vlan 308
+          - switchport mode access
+          - authentication event fail action next-method
+          - authentication event server dead action reinitialize vlan 308
+          - authentication host-mode multi-auth
+          - authentication order dot1x mab
+          - authentication priority dot1x mab
+          - authentication port-control auto
+          - authentication periodic
+          - authentication violation restrict
+          - mab
+          - dot1x pae authenticator
+          - spanning-tree portfast edge
+
+    - name: Configure Ethernet0/2 as routed port
+      ios_config:
+        lines:
+          - interface Ethernet0/2
+          - no switchport
+          - ip address 192.168.100.7 255.255.255.0
+
+    - name: Configure VLAN1
+      ios_config:
+        lines:
+          - interface Vlan1
+          - ip address 151.1.7.37 255.255.255.0
+
+    - name: Configure VLAN308
+      ios_config:
+        lines:
+          - interface Vlan308
+          - ip address 5.2.38.1 255.255.255.0
+

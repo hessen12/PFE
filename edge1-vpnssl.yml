@@ -1,0 +1,55 @@
+---
+- name: Configure FortiGate SSL VPN settings and authentication rules
+  hosts: fortigates
+  connection: httpapi
+  gather_facts: no
+  collections:
+    - fortinet.fortios
+
+  vars:
+    ansible_httpapi_use_ssl: false
+    ansible_httpapi_validate_certs: false
+    ansible_httpapi_port: 80
+    vdom: "root"
+    fortigate_token: "99kjN6p6H3N4xdHd51xtQy9p7g4wGh"
+
+  tasks:
+    - name: Configure SSL VPN global settings
+      fortios_vpn_ssl_settings:
+        access_token: "{{ fortigate_token }}"
+        vdom: "{{ vdom }}"
+        vpn_ssl_settings:
+          servercert: "ok"
+          port: 20443
+          default_portal: "full-access"
+          tunnel_ip_pools:
+            - "ssl-vpn"
+          source_interface:
+            - "port3"
+          source_address:
+            - "all"
+          source_address6:
+            - "all"
+
+    - name: Configure authentication rule for group sales
+      fortios_vpn_ssl_authentication_rule:
+        access_token: "{{ fortigate_token }}"
+        vdom: "{{ vdom }}"
+        state: present
+        vpn_ssl_authentication_rule:
+          id: 1
+          groups:
+            - "sales"
+          portal: "full-access"
+
+    - name: Configure authentication rule for group sales-ldap
+      fortios_vpn_ssl_authentication_rule:
+        access_token: "{{ fortigate_token }}"
+        vdom: "{{ vdom }}"
+        state: present
+        vpn_ssl_authentication_rule:
+          id: 2
+          groups:
+            - "sales-ldap"
+          portal: "full-access"
+

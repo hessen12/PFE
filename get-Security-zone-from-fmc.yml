@@ -1,0 +1,26 @@
+- name: Get Security Zones
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    fmc_base_url: "https://150.1.7.160"
+    fmc_token: "a7a260ba-6811-4431-839b-1ee6e0c7ddbd"
+    domain_uuid: "e276abec-e0f2-11e3-8169-6d9ed49b625f"
+
+  tasks:
+    - name: Fetch Security Zones
+      uri:
+        url: "{{ fmc_base_url }}/api/fmc_config/v1/domain/{{ domain_uuid }}/object/securityzones"
+        method: GET
+        headers:
+          X-auth-access-token: "{{ fmc_token }}"
+          Content-Type: "application/json"
+        validate_certs: no
+        status_code: 200
+      register: security_zone_response
+
+    - name: Display Security Zones
+      debug:
+        var: security_zone_response.json
+

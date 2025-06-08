@@ -1,0 +1,51 @@
+---
+- name: Configure R13 Router with IP Addresses and Settings
+  hosts: cisco
+  gather_facts: no
+  connection: network_cli
+
+  tasks:
+  
+    - name: Set hostname to R13
+      ios_command:
+        commands:
+          - conf t
+          - hostname R13
+
+    - name: Create admin user with privilege 15
+      ios_config:
+        lines:
+          - username admin privilege 15 secret admin
+
+    - name: Configure Loopback0 IP Address
+      ios_config:
+        lines:
+          - interface Loopback0
+          - ip address 192.168.4.1 255.255.255.255
+          - no shutdown
+
+    - name: Configure Ethernet0/1 IP Address
+      ios_config:
+        lines:
+          - interface Ethernet0/1
+          - ip address 172.29.30.13 255.255.255.0
+          - no shutdown
+
+    - name: Enable HTTP server and set port
+      ios_config:
+        lines:
+          - ip http server
+          - ip http port 8080
+          - ip http authentication local
+          - ip http secure-server
+
+    - name: Configure default route
+      ios_config:
+        lines:
+          - ip route 0.0.0.0 0.0.0.0 172.29.30.1
+
+    - name: Save Configuration
+      ios_command:
+        commands:
+          - write memory
+

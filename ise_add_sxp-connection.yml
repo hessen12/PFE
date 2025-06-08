@@ -1,0 +1,43 @@
+- name: Create SXP Connection in Cisco ISE
+  hosts: localhost
+  gather_facts: no
+  vars:
+    ise_host: "150.1.7.130"
+    ise_port: 9060
+    ise_user: "ise"
+    ise_pass: "Pa//w0rd"
+    headers:
+      Accept: "application/json"
+      Content-Type: "application/json"
+
+    # SXP connection data
+    sxp_data:
+      ERSSxpConnection:
+        sxpVpn: "default"
+        ipAddress: "10.1.1.2"                       # Replace with the peer's IP
+        description: "Ansible-created SXP peer"
+        sxpNode: "ISE"
+        sxpVersion: "VERSION_3"
+        enabled: true
+        sxpPeer: "test"
+        sxpMode: "LISTENER"
+
+  tasks:
+    - name: Create SXP connection
+      uri:
+        url: "https://{{ ise_host }}:{{ ise_port }}/ers/config/sxpconnections"
+        method: POST
+        user: "{{ ise_user }}"
+        password: "{{ ise_pass }}"
+        force_basic_auth: yes
+        headers: "{{ headers }}"
+        body: "{{ sxp_data }}"
+        body_format: json
+        status_code: 201
+        validate_certs: no
+      register: sxp_create_response
+
+    - name: Show API response
+      debug:
+        var: sxp_create_response
+

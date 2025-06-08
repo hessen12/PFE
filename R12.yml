@@ -1,0 +1,66 @@
+---
+- name: Configure Cisco Router R12
+  hosts: cisco
+  gather_facts: no
+  connection: network_cli
+
+  tasks:
+
+    - name: Set hostname
+      ios_command:
+        commands:
+          - conf t
+          - hostname R12
+
+    - name: Configure WCCP global setting
+      ios_command:
+        commands:
+          - conf t
+          - ip wccp 90 redirect-list wccp-redirect password 0 cisco
+
+    - name: Configure Ethernet0/0 interface
+      ios_command:
+        commands:
+          - conf t
+          - interface Ethernet0/0
+          - ip address 5.2.34.1 255.255.255.0
+          - ip wccp 90 redirect in
+          - no shutdown
+
+    - name: Configure Ethernet0/1 interface
+      ios_command:
+        commands:
+          - conf t
+          - interface Ethernet0/1
+          - ip address 5.2.33.1 255.255.255.0
+          - no shutdown
+
+    - name: Configure Ethernet0/2 interface
+      ios_command:
+        commands:
+          - conf t
+          - interface Ethernet0/2
+          - ip address 5.2.31.1 255.255.255.0
+          - no shutdown
+
+    - name: Configure EIGRP 3
+      ios_command:
+        commands:
+          - conf t
+          - router eigrp 3
+          - network 5.2.31.0 0.0.0.255
+          - network 5.2.33.0 0.0.0.255
+          - network 5.2.34.0 0.0.0.255
+
+    - name: Configure WCCP redirect ACL
+      ios_command:
+        commands:
+          - conf t
+          - ip access-list extended wccp-redirect
+          - permit tcp 172.29.35.0 0.0.0.255 any eq www
+
+    - name: Save configuration
+      ios_command:
+        commands:
+          - write memory
+

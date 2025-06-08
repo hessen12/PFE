@@ -1,0 +1,64 @@
+- name: Add a FortiGate node to an EVE-NG lab
+  hosts: localhost
+  gather_facts: no
+  vars:
+    eve_ng_ip: "10.112.62.51"
+    eve_ng_username: "admin"
+    eve_ng_password: "eve"
+    lab_path: "/pfe.unl"
+  tasks:
+    - name: Authenticate to EVE-NG and get a session cookie
+      ansible.builtin.uri:
+        url: "http://{{ eve_ng_ip }}/api/auth/login"
+        method: POST
+        headers:
+          Accept: "application/json"
+        body: >
+          {
+            "username": "{{ eve_ng_username }}",
+            "password": "{{ eve_ng_password }}",
+            "html5": "-1"
+          }
+        body_format: json
+        validate_certs: no
+        return_content: yes
+      register: login_response
+
+    - name: Set fact for cookies
+      ansible.builtin.set_fact:
+        eve_ng_cookies: "{{ login_response.cookies }}"
+
+    - name: Add a FortiGate node to the lab
+      ansible.builtin.uri:
+        url: "http://{{ eve_ng_ip }}/api/labs{{ lab_path }}/nodes"
+        method: POST
+        headers:
+          Content-Type: "application/json"
+          Cookie: "unetlab_session={{ eve_ng_cookies.unetlab_session }}"
+        body_format: json
+        body:
+          template: "fortinet"
+          type: "qemu"
+          name: "FortiGate"
+          image: "fortinet-fg-7-0-2"         # 🔁 Replace with your actual image folder name
+          icon: "Firewall.png"
+          ram: 2048
+          cpu: 2
+          ethernet: 4
+          console: "telnet"
+          qemu_options: "-machine type=pc,accel=kvm -serial mon:stdio -nographic"
+          ro_qemu_options: "-machine type=pc,accel=kvm -serial mon:stdio -nographic"
+          config: "0"
+          delay: "0"
+          left: 100
+          top: 100
+          postfix: 0
+        status_code: 201
+        validate_certs: no
+        return_content: yes
+      register: add_fgt_node_response
+
+    - name: Show FortiGate node creation response
+      ansible.builtin.debug:
+        var: add_fgt_node_response
+

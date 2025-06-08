@@ -1,0 +1,26 @@
+---
+- name: Download FortiGate backup to local machine
+  hosts: localhost
+  gather_facts: no
+  vars:
+    fortigate_host: "150.1.7.105"
+    api_token: "99kjN6p6H3N4xdHd51xtQy9p7g4wGh"
+    backup_file: "fgt-backup.conf"
+    backup_path: "/home/cloud-user/pfe/fgt-backup.conf"
+
+  tasks:
+    - name: Download FortiGate backup config
+      uri:
+        url: "http://{{ fortigate_host }}/api/v2/monitor/system/config/backup?scope=global"
+        method: GET
+        headers:
+          Authorization: "Bearer {{ api_token }}"
+        validate_certs: no
+        return_content: true
+      register: backup_response
+
+    - name: Save backup to local file
+      copy:
+        content: "{{ backup_response.content | b64decode }}"
+        dest: "{{ backup_path }}"
+

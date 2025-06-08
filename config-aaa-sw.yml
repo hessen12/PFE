@@ -1,0 +1,23 @@
+- name: Configure AAA on SW7v
+  hosts: switch
+  gather_facts: no
+  connection: network_cli
+  tasks:
+    - name: Configure AAA
+      ios_command:
+        commands:
+          - conf t
+          - aaa new-model
+          - aaa group server radius ise-group
+          -  server name ISE
+          - aaa authentication dot1x default group ise-group
+          - aaa authorization network default group ise-group
+          - aaa authorization auth-proxy default group ise-group
+          - aaa accounting update periodic 5
+          - aaa accounting dot1x default start-stop group ise-group
+          - aaa server radius policy-device
+          - aaa server radius dynamic-author
+          -  client 150.1.7.130 server-key aaaakey
+          -  server-key aaaakey
+          - aaa session-id common
+          - end

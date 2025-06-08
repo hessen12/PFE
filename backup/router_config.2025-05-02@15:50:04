@@ -1,0 +1,136 @@
+Building configuration...
+
+Current configuration : 1899 bytes
+!
+! Last configuration change at 16:54:56 UTC Fri May 2 2025 by admin
+version 15.2
+service timestamps debug datetime msec
+service timestamps log datetime msec
+no service password-encryption
+!
+hostname R13
+!
+boot-start-marker
+boot-end-marker
+!
+!
+!
+no aaa new-model
+mmi polling-interval 60
+no mmi auto-configure
+no mmi pvc
+mmi snmp-timeout 180
+!
+!
+!
+!
+
+
+!
+!
+!
+!
+ip domain name one.com
+ip cef
+ip wccp 90 redirect-list wccp-redirect password 0 cisco
+no ipv6 cef
+!
+multilink bundle-name authenticated
+!
+!
+!
+!
+!
+!
+!
+!
+username admin privilege 15 secret 5 $1$HZQ0$aIcwuQuJkDYG0KFHwg/6n1
+!
+redundancy
+!
+!
+ip ssh rsa keypair-name ssh-key
+ip ssh version 2
+! 
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+interface Loopback0
+ ip address 192.168.1.1 255.255.255.255
+!
+interface Ethernet0/0
+ ip address 5.2.34.1 255.255.255.0
+ ip wccp 90 redirect in
+!
+interface Ethernet0/1
+ ip address 5.2.33.1 255.255.255.0
+!
+interface Ethernet0/2
+ ip address 5.2.31.1 255.255.255.0
+!
+interface Ethernet0/3
+ ip address 150.1.7.150 255.255.255.0
+!
+!
+router eigrp 1
+ network 172.29.4.0 0.0.0.255
+ network 172.29.6.0 0.0.0.255
+ network 172.29.8.0 0.0.0.255
+ network 192.168.1.0
+!
+!
+router eigrp 3
+ network 5.2.31.0 0.0.0.255
+ network 5.2.33.0 0.0.0.255
+ network 5.2.34.0 0.0.0.255
+!
+router ospf 1
+ passive-interface Loopback0
+ network 172.29.14.0 0.0.0.255 area 0
+ network 172.29.15.0 0.0.0.255 area 0
+ network 172.29.16.0 0.0.0.255 area 0
+ network 192.168.3.0 0.0.0.255 area 0
+!
+ip forward-protocol nd
+!
+!
+ip http server
+ip http port 8080
+ip http authentication local
+ip http secure-server
+ip route 0.0.0.0 0.0.0.0 172.29.16.1
+ip route 0.0.0.0 0.0.0.0 172.29.14.1
+ip route 0.0.0.0 0.0.0.0 5.2.18.1
+ip route 0.0.0.0 0.0.0.0 5.2.11.1
+!
+ip access-list extended wccp-redirect
+ permit tcp 172.29.35.0 0.0.0.255 any eq www
+!
+!
+!
+!
+control-plane
+!
+!
+!
+!
+!
+!
+!
+line con 0
+ logging synchronous
+line aux 0
+line vty 0 4
+ login local
+ transport input ssh
+!
+!
+end

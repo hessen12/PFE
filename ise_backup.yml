@@ -1,0 +1,22 @@
+---
+- name: Trigger ISE 2.4 Backup via CLI
+  hosts: ise01
+  gather_facts: no
+  vars:
+    ise_user: ise
+    ise_password: 'Pa//w0rd'
+    repository: my
+    backup_filename: "ise_backup_{{ lookup('pipe', 'date +%Y%m%d%H%M%S') }}"
+    encryption_password: 'Passw0rd'
+
+  tasks:
+    - name: Trigger ISE backup using expect
+      expect:
+        command: ssh -o StrictHostKeyChecking=no -c aes256-cbc {{ ise_user }}@150.1.7.130
+        responses:
+          "assword:": "{{ ise_password }}"
+          "Enter session number to resume.*:": "\n"
+          ".*#": "backup bac repository {{ repository }} ise-config encryption-key plain {{ encryption_password }}\n"
+        timeout: 1500
+      register: backup_result
+

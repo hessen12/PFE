@@ -1,0 +1,21 @@
+- name: Configure static routes
+  hosts: asav
+  gather_facts: no
+  connection: network_cli
+
+  vars:
+    ansible_network_os: cisco.asa.asa
+    ansible_user: admin
+    ansible_password: admin
+    ansible_become: yes
+    ansible_become_method: enable
+    ansible_become_password: admin
+
+  tasks:
+    - name: Configure static routes
+      asa_command:
+        commands:
+          - route inside 0.0.0.0 0.0.0.0 172.29.16.15 1
+          - route outside 5.2.19.0 255.255.255.0 5.2.18.3 1
+          - route outside 5.2.20.0 255.255.255.0 5.2.18.3 1
+

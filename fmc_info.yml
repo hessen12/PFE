@@ -1,0 +1,43 @@
+- name: Lancer un backup FMC via l'API (avec récupération des infos d'API)
+  hosts: localhost
+  gather_facts: no
+
+  vars:
+    fmc_base_url: "https://150.1.7.160"
+    fmc_username: "hessen"
+    fmc_password: "adminadmin"
+    domain_uuid: "e276abec-e0f2-11e3-8169-6d9ed49b625f"
+
+  tasks:
+
+    - name: Authentification sur FMC - obtenir le token
+      uri:
+        url: "{{ fmc_base_url }}/api/fmc_platform/v1/auth/generatetoken"
+        method: POST
+        user: "{{ fmc_username }}"
+        password: "{{ fmc_password }}"
+        force_basic_auth: yes
+        validate_certs: false
+        return_content: no
+        status_code: [204]
+      register: login_response
+
+    - name: Extraire le token d'accès
+      set_fact:
+        fmc_token: "{{ login_response['x_auth_access_token'] | default(login_response['headers']['X-auth-access-token']) }}"
+
+    - name: Récupérer les informations d'API disponibles
+      uri:
+        url: "{{ fmc_base_url }}/api/fmc_platform/v1/info"
+        method: GET
+        headers:
+          X-auth-access-token: "{{ fmc_token }}"
+          Accept: "application/json"
+        validate_certs: false
+      register: api_info
+
+    - name: Afficher les endpoints disponibles de l'API FMC
+      debug:
+        var: api_info.json
+
+    

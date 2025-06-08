@@ -1,0 +1,49 @@
+---
+- name: Ajouter un Network Device à Cisco ISE
+  hosts: ise01
+  gather_facts: no
+  vars:
+    nad_name: "SWITCH-01-byansible1"
+    nad_ip: "150.1.7.206"
+    ise_base_url: "https://150.1.7.130:9060"
+    ise_auth: "Basic aGVzc2VuOmhlc3Nlbg=="  
+  tasks:
+
+    - name: Créer le Network Device
+      uri:
+        url: "{{ ise_base_url }}/ers/config/networkdevice"
+        method: POST
+        headers:
+          Content-Type: "application/json"
+          Accept: "application/json"
+          Authorization: "{{ ise_auth }}"
+        body_format: json
+        body:
+          NetworkDevice:
+            name: "{{ nad_name }}"
+            description: "This NAD was added via ERS API"
+            authenticationSettings:
+              radiusSharedSecret: "aaa"
+              enableKeyWrap: true
+              dtlsRequired: true
+              keyEncryptionKey: "1234567890123456"
+              messageAuthenticatorCodeKey: "12345678901234567890"
+              keyInputFormat: "ASCII"
+            profileName: "Cisco"
+            coaPort: 1700
+            dtlsDnsName: "Domain"
+            NetworkDeviceIPList:
+              - ipaddress: "{{ nad_ip }}"
+                mask: 32
+            NetworkDeviceGroupList:
+              - "Location#All Locations"
+              - "Device Type#All Device Types#router"
+
+        validate_certs: no
+        status_code: [201, 202]
+      register: result
+
+    - name: Afficher la réponse de l'API
+      debug:
+        var: result
+

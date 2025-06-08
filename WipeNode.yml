@@ -1,0 +1,45 @@
+---
+- name: Wipe a specific node in an EVE-NG lab
+  hosts: localhost
+  gather_facts: no
+  vars:
+    eve_ng_ip: "10.112.62.51"
+    eve_ng_username: "admin"
+    eve_ng_password: "eve"
+    lab_path: "/pfe.unl"
+    node_id: "6"
+  tasks:
+    - name: Authenticate to EVE-NG and get a session cookie
+      ansible.builtin.uri:
+        url: "http://{{ eve_ng_ip }}/api/auth/login"
+        method: POST
+        headers:
+          Accept: "application/json"
+        body: >
+          {
+            "username": "{{ eve_ng_username }}",
+            "password": "{{ eve_ng_password }}"
+          }
+        body_format: json
+        validate_certs: no
+        return_content: yes
+      register: login_response
+
+    - name: Set fact for cookies
+      ansible.builtin.set_fact:
+        eve_ng_cookies: "{{ login_response.cookies }}"
+
+    - name: Wipe the specific node in the lab
+      ansible.builtin.uri:
+        url: "http://{{ eve_ng_ip }}/api/labs{{ lab_path }}/nodes/{{ node_id }}/wipe"
+        method: GET
+        headers:
+          Accept: "application/json"
+          cookie: "unetlab_session={{ eve_ng_cookies.unetlab_session }}"
+        validate_certs: no
+        return_content: yes
+      register: wipe_node_response
+
+    - name: Debug wipe node response
+      ansible.builtin.debug:
+        var: wipe_node_response

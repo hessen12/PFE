@@ -1,0 +1,36 @@
+- name: Create Identity Group in Cisco ISE
+  hosts: localhost
+  gather_facts: no
+  vars:
+    ise_host: "150.1.7.130"
+    ise_port: 9060
+    ise_user: "ise"
+    ise_pass: "Pa//w0rd"
+    identity_group_name: "My_New_Group"
+    identity_group_description: "Created via Ansible"
+    headers:
+      Accept: "application/json"
+      Content-Type: "application/json"
+
+  tasks:
+    - name: Create new Identity Group
+      uri:
+        url: "https://{{ ise_host }}:{{ ise_port }}/ers/config/identitygroup"
+        method: POST
+        user: "{{ ise_user }}"
+        password: "{{ ise_pass }}"
+        force_basic_auth: yes
+        headers: "{{ headers }}"
+        body_format: json
+        body:
+          IdentityGroup:
+            name: "{{ identity_group_name }}"
+            description: "{{ identity_group_description }}"
+        status_code: 201
+        validate_certs: no
+      register: create_group_response
+
+    - name: Show result
+      debug:
+        var: create_group_response
+

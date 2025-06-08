@@ -1,0 +1,42 @@
+---
+- name: Créer un Downloadable ACL via l'API REST de Cisco ISE
+  hosts: ise01
+  gather_facts: false
+  vars:
+    ise_host: "150.1.7.130"
+    ise_port: "9060"
+    auth_string: "Basic aGVzc2VuOmhlc3Nlbg=="  # Your Base64 credentials
+    dacl_name: "TAC-DAl-using-ansible"
+    dacl_rules: |
+      permit tcp any host 172.29.207.10
+      permit udp any host 150.1.7.10 eq 53
+      permit udp any host 150.1.7.10 eq 123
+
+  tasks:
+    - name: Créer un DACL dans Cisco ISE
+      uri:
+        url: "https://{{ ise_host }}:{{ ise_port }}/ers/config/downloadableacl"
+        method: POST
+        headers:
+          Content-Type: "application/json"
+          Accept: "application/json"
+          Authorization: "{{ auth_string }}"
+        validate_certs: false
+        status_code: [200, 201]
+        body_format: json
+        body: >
+          {{
+            {
+              "DownloadableAcl": {
+                "name": dacl_name,
+                "description": "DACL pour trafic spécifique TCP/UDP",
+                "dacl": dacl_rules
+              }
+            } | to_json
+          }}
+      register: dacl_response
+
+    - name: Afficher la réponse de création du DACL
+      debug:
+        var: dacl_response
+

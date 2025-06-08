@@ -1,0 +1,72 @@
+---
+- name: Create Identity Store Sequence “PFE” in Cisco ISE ERS
+  hosts: ise01
+  gather_facts: no
+  vars:
+    ise_host: "150.1.7.130"
+    ise_user: "ise"
+    ise_password: "Pa//w0rd"
+    sequence_name: "PFE_byansible"
+
+  tasks:
+    - name: Create IdStoreSequence “PFE_byansible”
+      uri:
+        url: "https://{{ ise_host }}:9060/ers/config/idstoresequence"
+        method: POST
+        user: "{{ ise_user }}"
+        password: "{{ ise_password }}"
+        force_basic_auth: yes
+        validate_certs: no
+        headers:
+          Content-Type: "application/json"
+          Accept: "application/json"
+        body: |
+          {
+            "IdStoreSequence": {
+              "name": "{{ sequence_name }}",
+              "description": "",
+              "idSeqItem": [
+                {
+                  "idstore": "DC",
+                  "order": 1
+                },
+                {
+                  "idstore": "Internal Users",
+                  "order": 2
+                },
+                {
+                  "idstore": "Internal Endpoints",
+                  "order": 3
+                }
+              ],
+              "certificateAuthenticationProfile": "AD",
+              "breakOnStoreFail": false
+            }
+          }
+        body_format: json
+        status_code:
+          - 201
+          - 202
+      register: create_seq_result
+
+    - name: Show API response
+      debug:
+        var: create_seq_result.json
+
+    - name: Verify newly created IdStoreSequence “PFE”
+      uri:
+        url: "https://{{ ise_host }}:9060/ers/config/idstoresequence/name/{{ sequence_name }}"
+        method: GET
+        user: "{{ ise_user }}"
+        password: "{{ ise_password }}"
+        force_basic_auth: yes
+        validate_certs: no
+        headers:
+          Accept: "application/json"
+        return_content: yes
+      register: get_seq_result
+
+    - name: Display retrieved sequence
+      debug:
+        var: get_seq_result.json
+

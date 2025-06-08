@@ -1,0 +1,46 @@
+---
+- name: Stop all nodes in an EVE-NG lab
+  hosts: localhost
+  gather_facts: no
+  vars:
+    eve_ng_ip: "10.112.62.51"
+    eve_ng_username: "admin"
+    eve_ng_password: "eve"
+    lab_path: "/pfe.unl"
+  tasks:
+    - name: Authenticate to EVE-NG and get a session cookie
+      ansible.builtin.uri:
+        url: "http://{{ eve_ng_ip }}/api/auth/login"
+        method: POST
+        headers:
+          Accept: "application/json"
+        body: >
+          {
+            "username": "{{ eve_ng_username }}",
+            "password": "{{ eve_ng_password }}"
+          }
+        body_format: json
+        validate_certs: no
+        return_content: yes
+      register: login_response
+
+    - name: Set fact for cookies
+      ansible.builtin.set_fact:
+        eve_ng_cookies: "{{ login_response.cookies }}"
+      
+    - name: Stop all nodes in the lab
+      ansible.builtin.uri:
+        url: "http://{{ eve_ng_ip }}/api/labs{{ lab_path }}/nodes/stop"
+        method: POST
+        headers:
+          Content-Type: "application/json"
+          cookie: "unetlab_session={{ eve_ng_cookies.unetlab_session }}"
+        body: "{}"
+        body_format: json
+        validate_certs: no
+        return_content: yes
+      register: stop_nodes_response
+
+    - name: Debug stop nodes response
+      ansible.builtin.debug:
+        var: stop_nodes_response

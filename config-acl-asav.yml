@@ -1,0 +1,30 @@
+- name: Configure access-lists
+  hosts: asav
+  gather_facts: no
+  connection: network_cli
+
+  vars:
+    ansible_network_os: cisco.asa.asa
+    ansible_user: admin
+    ansible_password: admin
+    ansible_become: yes
+    ansible_become_method: enable
+    ansible_become_password: admin
+
+  tasks:
+    - name: Create ACLs
+      asa_command:
+        commands:
+          - access-list MarketingACL standard permit 172.16.1.0 255.255.255.0
+          - access-list MarketingACL standard permit host 192.168.3.1
+          - access-list MarketingACL standard permit host 150.1.7.10
+          - access-list MarketingACL standard permit host 150.1.7.130
+          - access-list enginerringAcl standard permit 172.20.1.0 255.255.255.0
+          - access-list enginerringAcl standard permit host 192.168.4.1
+          - access-list enginerringAcl standard permit host 150.1.7.10
+          - access-list enginerringAcl standard permit host 150.1.7.130
+          - access-list inside_access_in extended permit ip any any
+          - access-list inside_access_out extended permit object-group DM_INLINE_SERVICE_2 any any
+          - access-list outside_access_in extended permit object-group DM_INLINE_SERVICE_1 any any
+          - access-list outside_access_out extended permit ip any any
+

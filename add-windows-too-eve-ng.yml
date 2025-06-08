@@ -1,0 +1,63 @@
+- name: Add a Windows node to an EVE-NG lab
+  hosts: localhost
+  gather_facts: no
+  vars:
+    eve_ng_ip: "10.112.62.51"
+    eve_ng_username: "admin"
+    eve_ng_password: "eve"
+    lab_path: "/pfe.unl"
+
+  tasks:
+    - name: Authenticate to EVE-NG and get a session cookie
+      ansible.builtin.uri:
+        url: "http://{{ eve_ng_ip }}/api/auth/login"
+        method: POST
+        headers:
+          Accept: "application/json"
+        body: >
+          {
+            "username": "{{ eve_ng_username }}",
+            "password": "{{ eve_ng_password }}",
+            "html5": "-1"
+          }
+        body_format: json
+        validate_certs: no
+        return_content: yes
+      register: login_response
+
+    - name: Set fact for cookies
+      ansible.builtin.set_fact:
+        eve_ng_cookies: "{{ login_response.cookies }}"
+
+    - name: Add a Windows node to the lab
+      ansible.builtin.uri:
+        url: "http://{{ eve_ng_ip }}/api/labs{{ lab_path }}/nodes"
+        method: POST
+        headers:
+          Content-Type: "application/json"
+          Cookie: "unetlab_session={{ eve_ng_cookies.unetlab_session }}"
+        body_format: json
+        body:
+          template: "win"
+          type: "qemu"
+          name: "Windows10"
+          image: "win-10-x64-VL19"                # 🔁 Replace with your actual image folder name
+          icon: "Desktop.png"                # You can change to "Win10.png" if available
+          ram: 2048
+          cpu: 2
+          ethernet: 1
+          console: "vnc"
+          left: 200
+          top: 200
+          config: "0"
+          delay: "0"
+          postfix: 0
+        status_code: 201
+        validate_certs: no
+        return_content: yes
+      register: add_win_node_response
+
+    - name: Show Windows node creation response
+      ansible.builtin.debug:
+        var: add_win_node_response
+

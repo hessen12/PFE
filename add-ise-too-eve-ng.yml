@@ -1,0 +1,61 @@
+- name: Add Cisco ISE to an EVE-NG lab
+  hosts: localhost
+  gather_facts: no
+  vars:
+    eve_ng_ip: "10.112.62.51"
+    eve_ng_username: "admin"
+    eve_ng_password: "eve"
+    lab_path: "/PFE.unl"
+
+  tasks:
+    - name: Authenticate to EVE-NG and get a session cookie
+      ansible.builtin.uri:
+        url: "http://{{ eve_ng_ip }}/api/auth/login"
+        method: POST
+        headers:
+          Accept: "application/json"
+        body:
+          username: "{{ eve_ng_username }}"
+          password: "{{ eve_ng_password }}"
+          html5: "-1"
+        body_format: json
+        validate_certs: no
+        return_content: yes
+      register: login_response
+
+    - name: Set fact for EVE-NG session cookie
+      ansible.builtin.set_fact:
+        eve_ng_cookies: "{{ login_response.cookies }}"
+
+    - name: Add Cisco ISE node to the lab
+      ansible.builtin.uri:
+        url: "http://{{ eve_ng_ip }}/api/labs{{ lab_path }}/nodes"
+        method: POST
+        headers:
+          Content-Type: "application/json"
+          Cookie: "unetlab_session={{ eve_ng_cookies.unetlab_session }}"
+        body_format: json
+        body:
+          template: "ise"
+          type: "qemu"
+          name: "ISE-1"
+          image: "ise-2.4.0.357"           # 🔁 Change this to your exact image folder name
+          icon: "ISE.png"
+          ram: 16384                 # ISE requires 16GB minimum
+          cpu: 4
+          ethernet: 4
+          console: "vnc"
+          left: 400
+          top: 400
+          config: "0"
+          delay: "0"
+          postfix: 0
+        status_code: 201
+        validate_certs: no
+        return_content: yes
+      register: ise_node_creation
+
+    - name: Show Cisco ISE node creation response
+      ansible.builtin.debug:
+        var: ise_node_creation
+

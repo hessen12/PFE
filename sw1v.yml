@@ -1,0 +1,152 @@
+- name: Apply switch configuration - SW1v
+  hosts: switch
+  gather_facts: no
+  connection: network_cli
+
+  tasks:
+
+    - name: Configure AAA
+      ios_command:
+        commands:
+          - conf t
+          - aaa new-model
+          - aaa group server radius ise-group
+          -  server name ISE
+          - aaa authentication dot1x default group ise-group
+          - aaa authorization network default group ise-group
+          - aaa authorization auth-proxy default group ise-group
+          - aaa accounting update periodic 5
+          - aaa accounting dot1x default start-stop group ise-group
+          - aaa server radius policy-device
+          - aaa server radius dynamic-author
+          -  client 150.1.7.130 server-key aaakey
+          -  server-key aaakey
+          - aaa session-id common
+          - end
+
+    - name: Configure IP DHCP
+      ios_command:
+        commands:
+          - conf t
+          - ip dhcp excluded-address 172.29.207.1 172.29.207.9
+          - ip dhcp pool TAC
+          -  network 172.29.207.0 255.255.255.0
+          -  default-router 172.29.207.1
+          -  dns-server 150.1.7.10
+          - end
+
+    - name: Enable dot1x system-wide
+      ios_command:
+        commands:
+          - conf t
+          - dot1x system-auth-control
+          - end
+
+    - name: Configure Spanning Tree
+      ios_command:
+        commands:
+          - conf t
+          - spanning-tree mode pvst
+          - spanning-tree extend system-id
+          - end
+
+    - name: Configure Ethernet0/0
+      ios_command:
+        commands:
+          - conf t
+          - interface Ethernet0/0
+          - switchport trunk encapsulation dot1q
+          - spanning-tree portfast edge trunk
+          - end
+
+    - name: Configure Ethernet0/1 (dot1x + mab)
+      ios_command:
+        commands:
+          - conf t
+          - interface Ethernet0/1
+          - switchport
+          - switchport access vlan 207
+          - switchport mode access
+          - authentication event fail action next-method
+          - authentication event server dead action reinitialize vlan 207
+          - authentication host-mode multi-auth
+          - authentication order dot1x mab
+          - authentication priority dot1x mab
+          - authentication port-control auto
+          - authentication periodic
+          - authentication violation restrict
+          - mab
+          - dot1x pae authenticator
+          - spanning-tree portfast edge
+          - end
+
+    - name: Configure Ethernet0/2
+      ios_command:
+        commands:
+          - conf t
+          - interface Ethernet0/2
+          - switchport access vlan 207
+          - switchport mode access
+          - end
+
+    - name: Configure Vlan1
+      ios_command:
+        commands:
+          - conf t
+          - interface Vlan1
+          - ip address 151.1.7.31 255.255.255.0
+          - end
+
+    - name: Configure Vlan207
+      ios_command:
+        commands:
+          - conf t
+          - interface Vlan207
+          - ip address 172.29.207.1 255.255.255.0
+          - end
+
+    - name: Configure routing and IP services
+      ios_command:
+        commands:
+          - conf t
+          - ip forward-protocol nd
+          - ip http server
+          - ip route 0.0.0.0 0.0.0.0 150.1.7.251
+          - ip ssh server algorithm encryption aes128-ctr aes192-ctr aes256-ctr
+          - ip ssh client algorithm encryption aes128-ctr aes192-ctr aes256-ctr
+          - end
+
+    - name: Configure ACL-DEFAULT
+      ios_command:
+        commands:
+          - conf t
+          - ip access-list extended ACL-DEFAULT
+          - deny tcp any any eq 443
+          - permit udp any eq bootpc any eq bootps
+          - permit udp any any eq domain
+          - permit icmp any any
+          - deny ip any any log
+          - end
+
+    - name: Configure RADIUS and Logging
+      ios_command:
+        commands:
+          - conf t
+          - ip radius source-interface Vlan1
+          - logging source-interface Vlan1
+          - logging host 150.1.7.130 transport udp port 20514
+          - logging host 150.1.7.130
+          - radius-server attribute 6 on-for-login-auth
+          - radius-server attribute 6 support-multiple
+          - radius-server attribute 8 include-in-access-req
+          - radius-server attribute 25 access-request include
+          - radius server ISE
+          -  address ipv4 150.1.7.130 auth-port 1812 acct-port 1813
+          -  key aaakey
+          - end
+
+    - name: Save Configuration
+      ios_command:
+        commands:
+          - write memory
+

@@ -1,0 +1,15 @@
+- name: Configure DHCP on SW7v
+  hosts: switch
+  gather_facts: no
+  connection: network_cli
+  tasks:
+    - name: Configure IP DHCP
+      ios_command:
+        commands:
+          - conf t
+          - ip dhcp excluded-address 5.2.38.0 5.2.38.9
+          - ip dhcp pool Branch
+          -  network 5.2.38.0 255.255.255.0
+          -  default-router 5.2.38.1
+          -  dns-server 150.1.7.10
+          - end

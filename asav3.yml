@@ -1,0 +1,107 @@
+- name: Configure Cisco ASA2 complete settings
+  hosts: asav
+  gather_facts: no
+  connection: network_cli
+
+  vars:
+    ansible_network_os: cisco.asa.asa
+    ansible_user: admin
+    ansible_password: admin
+    ansible_become: yes
+    ansible_become_method: enable
+    ansible_become_password: admin
+
+  tasks:
+
+    - name: Set hostname and domain
+      asa_command:
+        commands:
+          - conf t
+          - hostname ASA2
+          - domain-name pfe.lab
+
+    - name: Set enable password
+      asa_command:
+        commands:
+          - enable password admin
+
+    - name: Configure GigabitEthernet interfaces
+      asa_command:
+        commands:
+          - interface GigabitEthernet0/0
+          - nameif dmz2
+          - security-level 50
+          - ip address 172.29.14.1 255.255.255.0
+          - no shutdown
+          - interface GigabitEthernet0/1
+          - nameif outside
+          - security-level 0
+          - ip address 172.29.15.1 255.255.255.0
+          - no shutdown
+          - interface GigabitEthernet0/2
+          - nameif inside
+          - security-level 100
+          - ip address 172.29.13.1 255.255.255.0
+          - no shutdown
+
+    - name: Configure DNS and domain
+      asa_command:
+        commands:
+          - dns domain-lookup outside
+          - dns server-group DefaultDNS
+          - name-server 8.8.8.8
+          - domain-name pfe.lab
+
+    - name: Configure Network Objects
+      asa_command:
+        commands:
+          - object network Marketing
+          - range 172.16.1.1 172.16.1.10
+          - object network Marketing-server
+          - subnet 192.168.3.0 255.255.255.0
+
+    - name: Configure Service Object-Groups
+      asa_command:
+        commands:
+          - object-group service DM_INLINE_SERVICE_1
+          - service-object ip
+          - service-object tcp destination eq www
+          - service-object tcp destination eq https
+          - object-group service DM_INLINE_SERVICE_2
+          - service-object ip
+          - service-object tcp destination eq www
+          - service-object tcp destination eq https
+          - object-group service DM_INLINE_SERVICE_3
+          - service-object ip
+          - service-object tcp destination eq www
+          - service-object tcp destination eq https
+
+    - name: Configure Access Lists
+      asa_command:
+        commands:
+          - access-list dmz2_access_out extended permit object-group DM_INLINE_SERVICE_2 any any
+          - access-list outside_access_in extended permit object-group DM_INLINE_SERVICE_1 any any
+          - access-list outside_access_out extended permit ip any any
+          - access-list inside_access_out extended permit object-group DM_INLINE_SERVICE_3 any any
+
+    - name: Configure OSPF Routing
+      asa_command:
+        commands:
+          - router ospf 1
+          - network 172.29.13.0 255.255.255.0 area 1
+          - network 172.29.14.0 255.255.255.0 area 0
+          - network 172.29.15.0 255.255.255.0 area 0
+          - log-adj-changes
+
+    - name: Configure Static Routes
+      asa_command:
+        commands:
+          - route outside 0.0.0.0 0.0.0.0 172.29.15.15 1
+          - route outside 172.16.1.0 255.255.255.0 172.29.15.15 1
+          - route outside 172.20.1.0 255.255.255.0 172.29.15.15 1
+
+    - name: Save running configuration
+      asa_command:
+        commands:
+          - write memory
+

@@ -1,0 +1,40 @@
+- name: Create Internal User in Cisco ISE
+  hosts: localhost
+  gather_facts: no
+  vars:
+    ise_host: "150.1.7.130"
+    ise_port: 9060
+    ise_user: "ise"
+    ise_pass: "Pa//w0rd"
+    internal_user_name: "newuser"
+    internal_user_password: "Pass1234"
+    identity_group: "fc868be0-f821-11ef-95af-9a4b75755955"  
+    headers:
+      Accept: "application/json"
+      Content-Type: "application/json"
+
+  tasks:
+    - name: Create new internal user
+      uri:
+        url: "https://{{ ise_host }}:{{ ise_port }}/ers/config/internaluser"
+        method: POST
+        user: "{{ ise_user }}"
+        password: "{{ ise_pass }}"
+        force_basic_auth: yes
+        headers: "{{ headers }}"
+        body_format: json
+        body:
+          InternalUser:
+            name: "{{ internal_user_name }}"
+            password: "{{ internal_user_password }}"
+            enabled: true
+            changePassword: false
+            identityGroups: "{{ identity_group }}"
+        status_code: 201
+        validate_certs: no
+      register: create_user_response
+
+    - name: Show creation result
+      debug:
+        var: create_user_response
+

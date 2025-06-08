@@ -1,0 +1,15 @@
+---
+- name: Test SSH connection to Cisco router
+  hosts: router
+  gather_facts: no
+  tasks:
+    - name: Run show version
+      cisco.ios.ios_command:
+        commands:
+          - show version
+      register: show_version_output
+
+    - name: Display the show version output
+      debug:
+        var: show_version_output.stdout
+

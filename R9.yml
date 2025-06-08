@@ -1,0 +1,43 @@
+---
+- name: Configure Cisco Router R9
+  hosts: cisco
+  gather_facts: no
+  connection: network_cli
+
+  tasks:
+
+    - name: Set hostname
+      ios_command:
+        commands:
+          - conf t
+          - hostname R9
+
+    - name: Configure interface Ethernet0/0
+      ios_command:
+        commands:
+          - conf t
+          - interface Ethernet0/0
+          - ip address 172.29.6.254 255.255.255.0
+          - no shutdown
+
+    - name: Configure interface Ethernet0/1
+      ios_command:
+        commands:
+          - conf t
+          - interface Ethernet0/1
+          - ip address 172.29.8.254 255.255.255.0
+          - no shutdown
+
+    - name: Configure EIGRP routing
+      ios_command:
+        commands:
+          - conf t
+          - router eigrp 1
+          - network 172.29.6.0 0.0.0.255
+          - network 172.29.8.0 0.0.0.255
+
+    - name: Save configuration
+      ios_command:
+        commands:
+          - write memory
+

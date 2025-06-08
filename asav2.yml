@@ -1,0 +1,150 @@
+- name: Configure Cisco ASA2v complete settings
+  hosts: asav
+  gather_facts: no
+  connection: network_cli
+
+  vars:
+    ansible_network_os: cisco.asa.asa
+    ansible_user: admin
+    ansible_password: admin
+    ansible_become: yes
+    ansible_become_method: enable
+    ansible_become_password: admin
+
+  tasks:
+
+    - name: Set hostname and domain
+      asa_command:
+        commands:
+          - conf t
+          - hostname ASA2v
+          - domain-name pfe.lab
+
+    - name: Set enable password
+      asa_command:
+        commands:
+          - enable password admin pbkdf2
+
+    - name: Configure interface settings
+      asa_command:
+        commands:
+          - interface GigabitEthernet0/0
+          - nameif inside
+          - security-level 100
+          - ip address 172.29.16.1 255.255.255.0
+          - no shutdown
+          - interface GigabitEthernet0/1
+          - nameif outside
+          - security-level 0
+          - ip address 5.2.18.1 255.255.255.0
+          - no shutdown
+          
+
+    - name: Configure local pools
+      asa_command:
+        commands:
+          - ip local pool Markketing-vpn-pool 172.16.1.1-172.16.1.10 mask 255.255.255.0
+          - ip local pool engineering-pool 172.20.1.1-172.20.1.100 mask 255.255.255.0
+
+    - name: Enable DNS and set server
+      asa_command:
+        commands:
+          - dns domain-lookup mgmt
+          - dns server-group DefaultDNS
+          - name-server 150.1.7.13 mgmt
+          - domain-name pfe.lab
+
+    - name: Permit same security traffic
+      asa_command:
+        commands:
+          - same-security-traffic permit intra-interface
+
+    - name: Define object groups
+      asa_command:
+        commands:
+          - object-group service DM_INLINE_SERVICE_1
+          - service-object ip
+          - service-object tcp destination eq www
+          - service-object tcp destination eq https
+          - object-group service DM_INLINE_SERVICE_2
+          - service-object ip
+          - service-object tcp destination eq www
+          - service-object tcp destination eq https
+
+    - name: Configure access-lists
+      asa_command:
+        commands:
+          - access-list MarketingACL standard permit 172.16.1.0 255.255.255.0
+          - access-list MarketingACL standard permit host 192.168.3.1
+          - access-list MarketingACL standard permit host 150.1.7.10
+          - access-list MarketingACL standard permit host 150.1.7.130
+          - access-list enginerringAcl standard permit 172.20.1.0 255.255.255.0
+          - access-list enginerringAcl standard permit host 192.168.4.1
+          - access-list enginerringAcl standard permit host 150.1.7.10
+          - access-list enginerringAcl standard permit host 150.1.7.130
+          - access-list inside_access_in extended permit ip any any
+          - access-list inside_access_out extended permit object-group DM_INLINE_SERVICE_2 any any
+          - access-list outside_access_in extended permit object-group DM_INLINE_SERVICE_1 any any
+          - access-list outside_access_out extended permit ip any any
+
+    - name: Apply access-groups to interfaces
+      asa_command:
+        commands:
+          - access-group inside_access_in in interface inside
+          - access-group inside_access_out out interface inside
+          - access-group outside_access_in in interface outside
+          - access-group outside_access_out out interface outside
+
+    - name: Configure OSPF
+      asa_command:
+        commands:
+          - router ospf 1
+          - network 172.29.16.0 255.255.255.0 area 0
+          - log-adj-changes
+
+    - name: Configure static routes
+      asa_command:
+        commands:
+          - route inside 0.0.0.0 0.0.0.0 172.29.16.15 1
+          - route outside 5.2.19.0 255.255.255.0 5.2.18.3 1
+          - route outside 5.2.20.0 255.255.255.0 5.2.18.3 1
+
+    - name: Enable logging and adjust timeouts
+      asa_command:
+        commands:
+          - logging enable
+          - logging asdm informational
+          - timeout xlate 3:00:00
+          - timeout conn 1:00:00 half-closed 0:10:00 udp 0:02:00 icmp 0:00:02
+
+    - name: Enable HTTP access
+      asa_command:
+        commands:
+          - http server enable
+          - http 150.1.7.0 255.255.255.0 mgmt
+
+    - name: Configure crypto settings
+      asa_command:
+        commands:
+          - crypto ipsec ikev2 ipsec-proposal AES256
+          - protocol esp encryption aes-256
+          - protocol esp integrity sha-1
+          - crypto dynamic-map SYSTEM_DEFAULT_CRYPTO_MAP 65535 set ikev2 ipsec-proposal AES256   
+          - crypto map outside_map 65535 ipsec-isakmp dynamic SYSTEM_DEFAULT_CRYPTO_MAP
+          - crypto map outside_map interface outside
+          - crypto map inside_map 65535 ipsec-isakmp dynamic SYSTEM_DEFAULT_CRYPTO_MAP
+          - crypto map inside_map interface inside
+
+    - name: Configure AAA and ISE
+      asa_command:
+        commands:
+          - aaa-server ISE protocol radius
+          - aaa-server ISE (mgmt) host 150.1.7.130
+          - key aaaa
+          - authentication-port 1812
+          - accounting-port 1813
+          - cts sxp enable
+          - cts sxp default password aaaa
+          - cts sxp default source-ip 150.1.7.122
+          - cts sxp connection peer 150.1.7.130 password default mode local listener
+

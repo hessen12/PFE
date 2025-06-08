@@ -1,0 +1,64 @@
+---
+- name: Configure Cisco Router R14
+  hosts: cisco
+  gather_facts: no
+  connection: network_cli
+
+  tasks:
+
+    - name: Set hostname
+      ios_command:
+        commands:
+          - conf t
+          - hostname R14
+
+    - name: Create admin user with privilege 15
+      ios_command:
+        commands:
+          - conf t
+          - username admin privilege 15 secret admin
+
+    - name: Configure Loopback0 interface
+      ios_command:
+        commands:
+          - conf t
+          - interface Loopback0
+          - ip address 192.168.3.1 255.255.255.0
+          - no shutdown
+
+    - name: Configure Ethernet0/0 interface
+      ios_command:
+        commands:
+          - conf t
+          - interface Ethernet0/0
+          - ip address 172.29.14.14 255.255.255.0
+          - no shutdown
+
+    - name: Configure OSPF
+      ios_command:
+        commands:
+          - conf t
+          - router ospf 1
+          - passive-interface Loopback0
+          - network 172.29.14.0 0.0.0.255 area 0
+          - network 192.168.3.0 0.0.0.255 area 0
+
+    - name: Configure HTTP server and authentication
+      ios_command:
+        commands:
+          - conf t
+          - ip http server
+          - ip http authentication local
+          - ip http secure-server
+
+    - name: Configure static default route
+      ios_command:
+        commands:
+          - conf t
+          - ip route 0.0.0.0 0.0.0.0 172.29.14.1
+
+    - name: Save configuration
+      ios_command:
+        commands:
+          - write memory
+

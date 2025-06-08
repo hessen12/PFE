@@ -1,0 +1,44 @@
+- name: Obtenir les interfaces du FTD sur FMC
+  hosts: localhost
+  connection: local
+  gather_facts: no
+
+  vars:
+    fmc_base_url: "https://150.1.7.160"
+    fmc_username: "hessen"
+    fmc_password: "adminadmin"
+    domain_uuid: "e276abec-e0f2-11e3-8169-6d9ed49b625f"
+    device_id: "1d92ee3c-1a05-11f0-861a-cbb39a8b51ce"
+
+  tasks:
+    - name: Générer un token FMC
+      uri:
+        url: "{{ fmc_base_url }}/api/fmc_platform/v1/auth/generatetoken"
+        method: POST
+        user: "{{ fmc_username }}"
+        password: "{{ fmc_password }}"
+        force_basic_auth: yes
+        validate_certs: no
+        return_content: yes
+        status_code: [201, 204]
+      register: auth_response
+
+    - name: Extraire le token d'accès
+      set_fact:
+        fmc_token: "{{ auth_response.x_auth_access_token | default(auth_response['headers']['X-auth-access-token']) }}"
+
+    - name: Obtenir les interfaces du FTD
+      uri:
+        url: "{{ fmc_base_url }}/api/fmc_config/v1/domain/{{ domain_uuid }}/devices/devicerecords/{{ device_id }}/physicalinterfaces"
+        method: GET
+        headers:
+          X-auth-access-token: "{{ fmc_token }}"
+        validate_certs: no
+        return_content: yes
+        status_code: 200
+      register: interface_list
+
+    - name: Afficher les interfaces récupérées
+      debug:
+        var: interface_list.json
+

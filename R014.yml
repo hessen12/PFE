@@ -1,0 +1,66 @@
+---
+- name: Configure Cisco Router R014
+  hosts: cisco
+  gather_facts: no
+  connection: network_cli
+
+  tasks:
+
+    - name: Set hostname
+      ios_command:
+        commands:
+          - conf t
+          - hostname R014
+
+    - name: Create admin user
+      ios_config:
+        lines:
+          - username admin privilege 15 secret admin
+
+    - name: Configure Loopback0
+      ios_config:
+        lines:
+          - interface Loopback0
+          - ip address 172.10.1.1 255.255.255.255
+          - no shutdown
+
+    - name: Configure Ethernet0/0
+      ios_config:
+        lines:
+          - interface Ethernet0/0
+          - ip address 5.2.30.1 255.255.255.0
+          - no shutdown
+
+    - name: Configure Ethernet0/1
+      ios_config:
+        lines:
+          - interface Ethernet0/1
+          - ip address 192.168.100.14 255.255.255.0
+          - no shutdown
+
+    - name: Configure EIGRP AS 3
+      ios_config:
+        lines:
+          - router eigrp 3
+          - network 5.2.30.0 0.0.0.255
+          - network 172.10.1.1 0.0.0.0
+
+    - name: Configure EIGRP AS 4
+      ios_config:
+        lines:
+          - router eigrp 4
+          - network 172.10.1.1 0.0.0.0
+          - network 192.168.100.0
+
+    - name: Enable HTTP server and authentication
+      ios_config:
+        lines:
+          - ip http server
+          - ip http authentication local
+          - ip http secure-server
+
+    - name: Save configuration
+      ios_command:
+        commands:
+          - write memory
+

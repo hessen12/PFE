@@ -1,0 +1,21 @@
+- name: Set hostname and domain
+  hosts: asav
+  gather_facts: no
+  connection: network_cli
+
+  vars:
+    ansible_network_os: cisco.asa.asa
+    ansible_user: admin
+    ansible_password: admin
+    ansible_become: yes
+    ansible_become_method: enable
+    ansible_become_password: admin
+
+  tasks:
+    - name: Set hostname and domain
+      asa_command:
+        commands:
+          - conf t
+          - hostname ASA2v
+          - domain-name pfe.lab
+

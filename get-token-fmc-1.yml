@@ -1,0 +1,68 @@
+---
+- name: Add FTD device to FMC
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    fmc_base_url: "https://150.1.7.160"
+    fmc_username: "hessen"
+    fmc_password: "adminadmin"
+    ftd_name: "FTD1"
+    ftd_hostname: "150.1.7.180"
+    ftd_regkey: "cisco"
+    access_policy_id: "50000025-0000-0ed3-0000-025769804543"
+    device_version: "7.2.8"
+    ftd_mode: "ROUTED"
+    license_caps:
+      - "BASE"
+    validate_certs: false  # set to true if you have valid certs
+
+  tasks:
+
+    - name: Get FMC token
+      uri:
+        url: "{{ fmc_base_url }}/api/fmc_platform/v1/auth/generatetoken"
+        method: POST
+        user: "{{ fmc_username }}"
+        password: "{{ fmc_password }}"
+        force_basic_auth: yes
+        validate_certs: "{{ validate_certs }}"
+        return_content: yes
+        status_code: [201, 204]
+      register: login_response
+
+    - name: Extract FMC token
+      set_fact:
+        fmc_auth_token: "{{ login_response.headers['X-auth-access-token'] }}"
+        fmc_domain_uuid: "{{ login_response.headers['DOMAIN_UUID'] }}"
+
+    - name: Add FTD device to FMC
+      uri:
+        url: "{{ fmc_base_url }}/api/fmc_config/v1/domain/{{ fmc_domain_uuid }}/devices/devicerecords"
+        method: POST
+        headers:
+          X-auth-access-token: "{{ fmc_auth_token }}"
+          Content-Type: "application/json"
+          Accept: "application/json"
+        body_format: json
+        body:
+          name: "{{ ftd_name }}"
+          hostName: "{{ ftd_hostname }}"
+          regKey: "{{ ftd_regkey }}"
+          type: "Device"
+          license_caps: "{{ license_caps }}"
+          accessPolicy:
+            id: "{{ access_policy_id }}"
+            type: "AccessPolicy"
+          version: "{{ device_version }}"
+          ftdMode: "{{ ftd_mode }}"
+          keepLocalEvents: false
+        validate_certs: "{{ validate_certs }}"
+        status_code: 202
+      register: add_device_response
+
+    - name: Show result of FTD onboarding
+      debug:
+        var: add_device_response.json
+
