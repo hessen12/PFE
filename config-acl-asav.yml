@@ -15,6 +15,7 @@
     - name: Create ACLs
       asa_command:
         commands:
+          - config t
           - access-list MarketingACL standard permit 172.16.1.0 255.255.255.0
           - access-list MarketingACL standard permit host 192.168.3.1
           - access-list MarketingACL standard permit host 150.1.7.10
