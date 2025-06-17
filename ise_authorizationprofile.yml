@@ -1,6 +1,6 @@
 ---
 - name: Créer un profil d'autorisation via l'API REST
-  hosts: ise01
+  hosts: ise
   gather_facts: false
   vars:
     ise_host: "150.1.7.130"
