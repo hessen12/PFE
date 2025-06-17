@@ -1,6 +1,6 @@
 ---
 - name: Créer un Downloadable ACL via l'API REST de Cisco ISE
-  hosts: ise01
+  hosts: ise
   gather_facts: false
   vars:
     ise_host: "150.1.7.130"
