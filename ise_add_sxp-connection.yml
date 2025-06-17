@@ -1,5 +1,5 @@
 - name: Create SXP Connection in Cisco ISE
-  hosts: localhost
+  hosts: ise
   gather_facts: no
   vars:
     ise_host: "150.1.7.130"
