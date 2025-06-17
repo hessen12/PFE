@@ -1,6 +1,6 @@
 ---
 - name: Ajouter un Network Device à Cisco ISE
-  hosts: ise01
+  hosts: ise
   gather_facts: no
   vars:
     nad_name: "SWITCH-01-byansible1"
