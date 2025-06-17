@@ -15,6 +15,7 @@
     - name: Configure static routes
       asa_command:
         commands:
+          - config t
           - route inside 0.0.0.0 0.0.0.0 172.29.16.15 1
           - route outside 5.2.19.0 255.255.255.0 5.2.18.3 1
           - route outside 5.2.20.0 255.255.255.0 5.2.18.3 1
