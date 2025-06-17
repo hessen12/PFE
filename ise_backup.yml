@@ -1,6 +1,6 @@
 ---
 - name: Trigger ISE 2.4 Backup via CLI
-  hosts: ise01
+  hosts: ise
   gather_facts: no
   vars:
     ise_user: ise
