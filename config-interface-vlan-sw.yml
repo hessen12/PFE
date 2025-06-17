@@ -6,6 +6,7 @@
     - name: Configure Ethernet0/0
       ios_config:
         lines:
+          - config t
           - interface Ethernet0/0
           - switchport trunk encapsulation dot1q
           - switchport mode trunk
@@ -14,6 +15,7 @@
     - name: Configure Ethernet0/1 (dot1x + mab)
       ios_config:
         lines:
+          - config t
           - interface Ethernet0/1
           - switchport access vlan 308
           - switchport mode access
@@ -32,6 +34,7 @@
     - name: Configure Ethernet0/2 as routed port
       ios_config:
         lines:
+          - config t
           - interface Ethernet0/2
           - no switchport
           - ip address 192.168.100.7 255.255.255.0
@@ -39,12 +42,14 @@
     - name: Configure VLAN1
       ios_config:
         lines:
+          - config t
           - interface Vlan1
           - ip address 151.1.7.37 255.255.255.0
 
     - name: Configure VLAN308
       ios_config:
         lines:
+          - config t
           - interface Vlan308
           - ip address 5.2.38.1 255.255.255.0
 
