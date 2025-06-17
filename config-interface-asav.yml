@@ -17,7 +17,7 @@
         commands:
           - config t
           - interface GigabitEthernet0/0
-          - nameif inside
+          - nameif mgmt
           - security-level 100
           - ip address 172.29.16.1 255.255.255.0
           - no shutdown
