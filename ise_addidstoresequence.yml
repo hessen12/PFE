@@ -1,6 +1,6 @@
 ---
 - name: Create Identity Store Sequence “PFE” in Cisco ISE ERS
-  hosts: ise01
+  hosts: ise
   gather_facts: no
   vars:
     ise_host: "150.1.7.130"
